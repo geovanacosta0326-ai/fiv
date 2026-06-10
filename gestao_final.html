@@ -306,6 +306,75 @@ textarea { resize: vertical; min-height: 72px; }
 .toast.error   { background: rgba(192,57,43,.15); border: 1px solid rgba(192,57,43,.3); color: var(--red); }
 @keyframes toast-in { from { opacity:0; transform: translateX(20px); } }
 
+
+/* ── Modal E-mail ─────────────────────────────────── */
+.email-modal-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.7); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.email-modal {
+  background: #fff; border-radius: 16px; width: 100%; max-width: 680px;
+  max-height: 90vh; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3); overflow: hidden;
+}
+.email-modal-header {
+  background: linear-gradient(135deg, #0f3d22, #1a7a45);
+  padding: 20px 24px; display: flex; align-items: center; justify-content: space-between;
+}
+.email-modal-header h3 { color: #fff; font-size: 1rem; font-weight: 700; margin: 0; }
+.email-modal-header span { color: rgba(255,255,255,.6); font-size: .78rem; margin-top: 2px; display: block; }
+.email-modal-close {
+  background: rgba(255,255,255,.15); border: none; color: #fff;
+  width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+  font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
+  transition: background .2s;
+}
+.email-modal-close:hover { background: rgba(255,255,255,.25); }
+.email-modal-body { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+.email-field-label {
+  font-size: .7rem; font-weight: 700; color: #1a5c32;
+  letter-spacing: .07em; text-transform: uppercase; margin-bottom: 5px; display: block;
+}
+.email-input {
+  width: 100%; padding: 10px 14px; border: 1.5px solid #b8d8c4; border-radius: 8px;
+  font-family: var(--font); font-size: .88rem; color: #0f2a1a; outline: none;
+  transition: border-color .2s, box-shadow .2s; background: #fff;
+}
+.email-input:focus { border-color: #1a7a45; box-shadow: 0 0 0 3px rgba(26,122,69,.15); }
+.email-textarea {
+  width: 100%; padding: 12px 14px; border: 1.5px solid #b8d8c4; border-radius: 8px;
+  font-family: var(--mono); font-size: .8rem; color: #0f2a1a; outline: none; resize: vertical;
+  min-height: 260px; line-height: 1.6; transition: border-color .2s, box-shadow .2s;
+}
+.email-textarea:focus { border-color: #1a7a45; box-shadow: 0 0 0 3px rgba(26,122,69,.15); }
+.email-config-row {
+  background: #f8fcf9; border: 1px solid #d5e8da; border-radius: 10px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.email-config-row summary { cursor: pointer; font-size: .78rem; font-weight: 600; color: #1a5c32; }
+.email-config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.email-modal-footer {
+  padding: 16px 24px; border-top: 1px solid #e2e8f0;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: #f8fcf9;
+}
+.email-status { font-size: .8rem; color: var(--muted); flex: 1; }
+.email-status.ok  { color: #1a7a45; }
+.email-status.err { color: var(--red); }
+.btn-send-email {
+  background: linear-gradient(135deg, #1a7a45, #0f5c32);
+  color: #fff; border: none; border-radius: 8px; padding: 11px 22px;
+  font-family: var(--font); font-size: .9rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; transition: opacity .2s;
+}
+.btn-send-email:disabled { opacity: .5; cursor: not-allowed; }
+.btn-send-email:hover:not(:disabled) { opacity: .9; }
+.emailjs-setup-hint {
+  background: rgba(37,99,235,.07); border: 1px solid rgba(37,99,235,.2);
+  border-radius: 8px; padding: 10px 14px; font-size: .78rem; color: #1d4ed8; line-height: 1.6;
+}
+
 /* ── Readonly ────────────────────────────────────── */
 .readonly-notice { background: rgba(217,119,6,.07); border: 1px solid rgba(217,119,6,.2); color: var(--yellow); border-radius: 8px; padding: 10px 16px; font-size: .82rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 
@@ -3587,15 +3656,11 @@ async function enviarEmailLote(loteKey) {
   const aprovados = lote.itens.filter(p => p.status === 'aprovado');
   if (aprovados.length === 0) { toast('Nenhum produtor aprovado neste lote.', 'error'); return; }
 
-  // Desabilita o botão imediatamente para evitar duplo clique
-  const btnEmail = document.querySelector('.ed-actions .btn-blue');
-  if (btnEmail) { btnEmail.disabled = true; btnEmail.textContent = '⏳ Processando…'; }
-
   const hoje = hojeFormatado();
   const totalAnimais = aprovados.reduce((s, p) => s + parseInt(p.quantidade_animais || 0, 10), 0);
   const nomeArq = `DEMANDA_FIV_${(lote.sindicato || 'LOTE').replace(/\s+/g,'_')}_${hoje.replace(/\//g,'-')}.xlsx`;
 
-  // Gera planilha xlsx em memória e baixa
+  // Gera planilha xlsx e converte para base64 (para baixar depois)
   const dadosExcel = aprovados.map((p, i) => ({
     'N°': i + 1,
     'Nome do Produtor/Produto': p.nome || '—',
@@ -3610,19 +3675,13 @@ async function enviarEmailLote(loteKey) {
   ws['!cols'] = [{wch:5},{wch:35},{wch:14},{wch:22},{wch:16},{wch:18},{wch:30},{wch:30}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Aprovados');
-  const base64 = XLSX.write(wb, { bookType:'xlsx', type:'base64' });
-  const byteChars = atob(base64);
-  const byteArr = new Uint8Array(byteChars.length);
-  for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
-  const blob = new Blob([byteArr], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const aEl = document.createElement('a'); aEl.href = URL.createObjectURL(blob); aEl.download = nomeArq; aEl.click(); URL.revokeObjectURL(aEl.href);
 
   // Monta corpo do e-mail
   const linhas = aprovados.map((p, i) =>
     `  ${String(i+1).padStart(2,'0')}. ${p.nome} | CPF: ${fmtCPF(p.cpf)} | ${p.municipio || '—'} | Contato: ${p.contato || '—'} | Animais: ${p.quantidade_animais || 0}`
   ).join('\n');
 
-  const corpo =
+  const corpoDefault =
 `Prezada Geovana,
 
 Encaminho demanda de credenciamento FIV aprovada para processamento.
@@ -3641,17 +3700,155 @@ PRODUTORES APROVADOS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${linhas}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠ ANEXO: O arquivo "${nomeArq}" foi baixado automaticamente. Anexe antes de enviar.
-
 Atenciosamente,
 Sistema de Gestão FAEC`;
 
-  const assunto = encodeURIComponent(`[FAEC] Demanda FIV Aprovada - ${lote.sindicato} - ${hoje}`);
-  window.open(`https://mail.google.com/mail/?view=cm&to=geovanacosta0326@gmail.com&su=${assunto}&body=${encodeURIComponent(corpo)}&tf=1`, '_blank');
+  // Abre modal de composição
+  _abrirModalEmail(loteKey, lote, aprovados, wb, nomeArq, corpoDefault);
+}
 
-  // Persiste no banco: aprovados → 'enviado'
+function _abrirModalEmail(loteKey, lote, aprovados, wb, nomeArq, corpoDefault) {
+  // Lê config salva
+  const cfg = JSON.parse(localStorage.getItem('emailjs_cfg') || '{}');
+
+  document.getElementById('modal-root').innerHTML = `
+  <div class="email-modal-overlay" id="email-overlay">
+    <div class="email-modal">
+      <div class="email-modal-header">
+        <div>
+          <h3>📧 Enviar E-mail de Demanda FIV</h3>
+          <span>${lote.sindicato} · ${aprovados.length} aprovado(s)</span>
+        </div>
+        <button class="email-modal-close" onclick="fecharModalEmail()">✕</button>
+      </div>
+
+      <div class="email-modal-body">
+
+        <!-- Campos do e-mail -->
+        <div>
+          <label class="email-field-label">Para</label>
+          <input class="email-input" id="email-to" value="geovanacosta0326@gmail.com">
+        </div>
+        <div>
+          <label class="email-field-label">Assunto</label>
+          <input class="email-input" id="email-subject" value="[FAEC] Demanda FIV Aprovada - ${lote.sindicato} - ${hojeFormatado()}">
+        </div>
+        <div>
+          <label class="email-field-label">Mensagem</label>
+          <textarea class="email-textarea" id="email-body">${corpoDefault}</textarea>
+        </div>
+
+        <!-- Anexo -->
+        <div style="background:#f0f9f4;border:1px solid #b8d8c4;border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:.83rem">
+          <span style="font-size:1.2rem">📎</span>
+          <div>
+            <div style="font-weight:600;color:#0f3d22">${nomeArq}</div>
+            <div style="color:var(--muted);font-size:.74rem">Planilha com ${aprovados.length} produtor(es) aprovado(s) · será baixada ao enviar</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="email-modal-footer">
+        <div class="email-status" id="email-status-msg"></div>
+        <button class="btn btn-ghost" onclick="fecharModalEmail()">Cancelar</button>
+        <button class="btn-send-email" id="btn-enviar-agora" onclick="_confirmarEnvioEmail('${loteKey.replace(/'/g,"\\'")}')">
+          <span>📤</span> Enviar E-mail
+        </button>
+      </div>
+    </div>
+  </div>`;
+
+  // Salva wb no escopo global temporariamente
+  window._emailWb = wb;
+  window._emailNomeArq = nomeArq;
+  window._emailLoteKey = loteKey;
+}
+
+function _salvarCfgEmailJS() {
+  const cfg = {
+    serviceId:  document.getElementById('ejs-service')?.value.trim(),
+    templateId: document.getElementById('ejs-template')?.value.trim(),
+    publicKey:  document.getElementById('ejs-pubkey')?.value.trim(),
+  };
+  if (!cfg.serviceId || !cfg.templateId || !cfg.publicKey) {
+    toast('Preencha todos os campos de configuração.', 'error'); return;
+  }
+  localStorage.setItem('emailjs_cfg', JSON.stringify(cfg));
+  toast('✅ Configuração salva!');
+  // Fecha o details
+  const det = document.getElementById('emailjs-details');
+  if (det) det.removeAttribute('open');
+}
+
+function fecharModalEmail() {
+  document.getElementById('modal-root').innerHTML = '';
+  window._emailWb = null;
+}
+
+async function _confirmarEnvioEmail(loteKey) {
+  const RESEND_KEY = 're_NC3UdE1q_Jcec2SeGFYShqp5kC3YgJHmr';
+
+  const to      = document.getElementById('email-to')?.value.trim();
+  const subject = document.getElementById('email-subject')?.value.trim();
+  const message = document.getElementById('email-body')?.value.trim();
+
+  if (!to || !subject || !message) { toast('Preencha todos os campos.', 'error'); return; }
+
+  const btn = document.getElementById('btn-enviar-agora');
+  const statusEl = document.getElementById('email-status-msg');
+  btn.disabled = true; btn.innerHTML = '⏳ Enviando…';
+  statusEl.textContent = 'Conectando ao serviço de e-mail…';
+  statusEl.className = 'email-status';
+
+  try {
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + RESEND_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'FAEC Sistema <onboarding@resend.dev>',
+        to:   [to],
+        subject: subject,
+        text: message,
+      }),
+    });
+
+    const result = await resp.json();
+    if (!resp.ok) throw new Error(result?.message || JSON.stringify(result));
+
+    // Baixa planilha
+    if (window._emailWb) {
+      XLSX.writeFile(window._emailWb, window._emailNomeArq);
+    }
+
+    statusEl.textContent = '✅ E-mail enviado com sucesso!';
+    statusEl.className = 'email-status ok';
+
+    await _marcarLoteComoEnviado(loteKey);
+
+    toast(`📧 E-mail enviado para ${to}!`);
+    setTimeout(() => {
+      fecharModalEmail();
+      _renderEsteiraLista(document.getElementById('content'));
+    }, 1500);
+
+  } catch(e) {
+    console.error('Resend error:', e);
+    statusEl.textContent = '❌ Erro: ' + (e?.message || JSON.stringify(e));
+    statusEl.className = 'email-status err';
+    btn.disabled = false; btn.innerHTML = '<span>📤</span> Tentar novamente';
+  }
+}
+
+async function _marcarLoteComoEnviado(loteKey) {
+  const lote = _esteiraLotes.find(l => l.key === loteKey);
+  if (!lote) return;
+  const aprovados  = lote.itens.filter(p => p.status === 'aprovado');
   const idsAprovados = aprovados.map(p => p.id);
+
   if (sb && idsAprovados.length > 0) {
     try {
       const { error } = await sb.schema('contratos_pro_especiais')
@@ -3660,31 +3857,21 @@ Sistema de Gestão FAEC`;
         .in('id', idsAprovados);
       if (error) throw error;
     } catch(e) {
-      toast('Aviso: não foi possível atualizar o banco. ' + e.message, 'error');
+      toast('Aviso: banco não atualizado. ' + e.message, 'error');
     }
   }
 
-  // Atualiza estado local: itens aprovados → 'enviado', recalcula contadores e força fase
-  const idsEnviados = new Set(idsAprovados);
+  // Atualiza estado local
+  const idsSet = new Set(idsAprovados);
   _esteiraLotes = _esteiraLotes.map(l => {
     if (l.key !== loteKey) return l;
-    const itensAtualizados = l.itens.map(p =>
-      idsEnviados.has(p.id) ? { ...p, status: 'enviado' } : p
-    );
-    const enviados = itensAtualizados.filter(p => p.status === 'enviado').length;
-    const aprov    = itensAtualizados.filter(p => p.status === 'aprovado').length;
-    const reprov   = itensAtualizados.filter(p => p.status === 'reprovado').length;
-    const pend     = itensAtualizados.filter(p => !p.status || p.status === 'pendente').length;
-    return { ...l, itens: itensAtualizados, enviados, aprov, reprov, pend, emailEnviado: true, fase: 'fatura_aberta' };
+    const itens  = l.itens.map(p => idsSet.has(p.id) ? { ...p, status: 'enviado' } : p);
+    const enviados = itens.filter(p => p.status === 'enviado').length;
+    const aprov    = itens.filter(p => p.status === 'aprovado').length;
+    const reprov   = itens.filter(p => p.status === 'reprovado').length;
+    const pend     = itens.filter(p => !p.status || p.status === 'pendente').length;
+    return { ...l, itens, enviados, aprov, reprov, pend, emailEnviado: true, fase: 'fatura_aberta' };
   });
-
-  const reprovados = lote.itens.filter(p => p.status === 'reprovado');
-  toast(`📧 E-mail preparado! ${aprovados.length} aprovado(s) marcado(s) como enviado. ${reprovados.length > 0 ? reprovados.length + ' reprovado(s) registrado(s).' : ''}`);
-
-  // Volta para a lista da esteira — o lote já aparecerá na coluna "E-mail Enviado"
-  setTimeout(() => {
-    _renderEsteiraLista(document.getElementById('content'));
-  }, 1200);
 }
 
 
