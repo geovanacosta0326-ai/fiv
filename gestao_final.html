@@ -3556,58 +3556,73 @@ async function renderEsteira() {
 
 function _renderEsteiraLista(c) {
   const lotes = _esteiraLotes;
-
   const contFases = { em_analise: 0, aguardando_envio: 0, fatura_aberta: 0 };
   lotes.forEach(l => contFases[l.fase]++);
 
   c.innerHTML = `
-
-  <!-- Kanban view -->
   <div id="esteira-root">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
       <div>
         <div style="font-size:1rem;font-weight:700;color:var(--text)">Lotes de Credenciamento</div>
-        <div style="font-size:.78rem;color:var(--muted);margin-top:2px">${lotes.length} lote(s) encontrado(s)</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:2px" id="esteira-count">${lotes.length} lote(s) encontrado(s)</div>
       </div>
-      <button class="btn btn-ghost" onclick="renderEsteira()">🔄 Atualizar</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div style="position:relative">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.9rem">🔍</span>
+          <input id="esteira-busca" type="text" placeholder="Buscar sindicato..." 
+            style="padding:8px 12px 8px 32px;border:1px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--surface);color:var(--text);width:220px;outline:none"
+            oninput="_filtrarEsteira(this.value)" />
+        </div>
+        <button class="btn btn-ghost" onclick="renderEsteira()">🔄 Atualizar</button>
+      </div>
     </div>
 
-    <div class="esteira-kanban" style="grid-template-columns:repeat(3,1fr)">
-      <!-- Coluna Em Análise -->
+    <div class="esteira-kanban" style="grid-template-columns:repeat(3,1fr)" id="esteira-kanban">
       <div class="esteira-col ecol-analise">
-        <div class="esteira-col-head">
-          ⏳ Em Análise
-          <span class="col-count">${contFases.em_analise}</span>
-        </div>
-        <div class="esteira-col-body">
+        <div class="esteira-col-head">⏳ Em Análise<span class="col-count" id="cnt-analise">${contFases.em_analise}</span></div>
+        <div class="esteira-col-body" id="col-analise">
           ${lotes.filter(l => l.fase === 'em_analise').map(l => _htmlLoteCard(l)).join('') || '<div style="text-align:center;padding:24px;color:var(--muted2);font-size:.82rem">Nenhum lote</div>'}
         </div>
       </div>
-
-      <!-- Coluna Aguardando Envio -->
       <div class="esteira-col ecol-envio">
-        <div class="esteira-col-head">
-          📧 Aguardando Envio
-          <span class="col-count">${contFases.aguardando_envio}</span>
-        </div>
-        <div class="esteira-col-body">
+        <div class="esteira-col-head">📧 Aguardando Envio<span class="col-count" id="cnt-envio">${contFases.aguardando_envio}</span></div>
+        <div class="esteira-col-body" id="col-envio">
           ${lotes.filter(l => l.fase === 'aguardando_envio').map(l => _htmlLoteCard(l)).join('') || '<div style="text-align:center;padding:24px;color:var(--muted2);font-size:.82rem">Nenhum lote</div>'}
         </div>
       </div>
-
-      <!-- Coluna E-mail Enviado -->
       <div class="esteira-col ecol-fatura">
-        <div class="esteira-col-head">
-          ✅ E-mail Enviado
-          <span class="col-count">${contFases.fatura_aberta}</span>
-        </div>
-        <div class="esteira-col-body">
+        <div class="esteira-col-head">✅ E-mail Enviado<span class="col-count" id="cnt-fatura">${contFases.fatura_aberta}</span></div>
+        <div class="esteira-col-body" id="col-fatura">
           ${lotes.filter(l => l.fase === 'fatura_aberta').map(l => _htmlLoteCard(l)).join('') || '<div style="text-align:center;padding:24px;color:var(--muted2);font-size:.82rem">Nenhum lote enviado</div>'}
         </div>
       </div>
     </div>
   </div>
   `;
+}
+
+function _filtrarEsteira(termo) {
+  const t = termo.trim().toLowerCase();
+  const filtrados = t ? _esteiraLotes.filter(l => (l.sindicato||'').toLowerCase().includes(t) || (l.responsavel||'').toLowerCase().includes(t)) : _esteiraLotes;
+
+  const fases = { em_analise: [], aguardando_envio: [], fatura_aberta: [] };
+  filtrados.forEach(l => fases[l.fase] ? fases[l.fase].push(l) : null);
+
+  const vazio = '<div style="text-align:center;padding:24px;color:var(--muted2);font-size:.82rem">Nenhum lote</div>';
+
+  const colAnalise = document.getElementById('col-analise');
+  const colEnvio   = document.getElementById('col-envio');
+  const colFatura  = document.getElementById('col-fatura');
+  const count      = document.getElementById('esteira-count');
+
+  if (colAnalise) colAnalise.innerHTML = fases.em_analise.map(l => _htmlLoteCard(l)).join('') || vazio;
+  if (colEnvio)   colEnvio.innerHTML   = fases.aguardando_envio.map(l => _htmlLoteCard(l)).join('') || vazio;
+  if (colFatura)  colFatura.innerHTML  = fases.fatura_aberta.map(l => _htmlLoteCard(l)).join('') || vazio;
+
+  if (document.getElementById('cnt-analise')) document.getElementById('cnt-analise').textContent = fases.em_analise.length;
+  if (document.getElementById('cnt-envio'))   document.getElementById('cnt-envio').textContent   = fases.aguardando_envio.length;
+  if (document.getElementById('cnt-fatura'))  document.getElementById('cnt-fatura').textContent  = fases.fatura_aberta.length;
+  if (count) count.textContent = filtrados.length + ' lote(s) encontrado(s)';
 }
 
 function _htmlLoteCard(l) {
