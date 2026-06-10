@@ -4086,7 +4086,7 @@ async function diagnosticarFaturas() {
 }
 
 function copiarLink(id) {
-    const urlBase = window.location.origin + window.location.pathname.replace(/[^/]*$/, '') + 'credenciamento_publico.html';
+    const urlBase = 'https://geovanacosta0326-ai.github.io/fiv/credenciamento_publico.html';
     const linkCompleto = `${urlBase}?projeto=${id}`;
     
     navigator.clipboard.writeText(linkCompleto).then(() => {
