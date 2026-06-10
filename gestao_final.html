@@ -3787,7 +3787,9 @@ function fecharModalEmail() {
 }
 
 async function _confirmarEnvioEmail(loteKey) {
-  const RESEND_KEY = 're_NC3UdE1q_Jcec2SeGFYShqp5kC3YgJHmr';
+  const EMAILJS_SERVICE_ID  = 'service_1apco5p';
+  const EMAILJS_TEMPLATE_ID = 'template_htgeljv';
+  const EMAILJS_PUBLIC_KEY  = 'qo1P1Ti9Ji0j3EU5p';
 
   const to      = document.getElementById('email-to')?.value.trim();
   const subject = document.getElementById('email-subject')?.value.trim();
@@ -3802,22 +3804,26 @@ async function _confirmarEnvioEmail(loteKey) {
   statusEl.className = 'email-status';
 
   try {
-    const resp = await fetch('https://api.resend.com/emails', {
+    const resp = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + RESEND_KEY,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'FAEC Sistema <onboarding@resend.dev>',
-        to:   [to],
-        subject: subject,
-        text: message,
+        service_id:  EMAILJS_SERVICE_ID,
+        template_id: EMAILJS_TEMPLATE_ID,
+        user_id:     EMAILJS_PUBLIC_KEY,
+        template_params: {
+          to_email: to,
+          subject:  subject,
+          message:  message,
+          name:     'Sistema FAEC',
+        },
       }),
     });
 
-    const result = await resp.json();
-    if (!resp.ok) throw new Error(result?.message || JSON.stringify(result));
+    if (!resp.ok) {
+      const txt = await resp.text();
+      throw new Error(txt || 'Erro ao enviar e-mail (status ' + resp.status + ')');
+    }
 
     // Baixa planilha
     if (window._emailWb) {
@@ -3836,7 +3842,7 @@ async function _confirmarEnvioEmail(loteKey) {
     }, 1500);
 
   } catch(e) {
-    console.error('Resend error:', e);
+    console.error('EmailJS error:', e);
     statusEl.textContent = '❌ Erro: ' + (e?.message || JSON.stringify(e));
     statusEl.className = 'email-status err';
     btn.disabled = false; btn.innerHTML = '<span>📤</span> Tentar novamente';
