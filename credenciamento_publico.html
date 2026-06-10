@@ -628,7 +628,7 @@
                 </div>
                 <div class="field-group">
                     <label>Contato</label>
-                    <input type="text" id="contato" placeholder="(xx) xxxx-xxxx" maxlength="14">
+                    <input type="text" id="contato" placeholder="(xx) 9xxxx-xxxx" maxlength="15">
                 </div>
                 <div class="field-group">
                     <label>Qtd. Animais Aptos (13 a 35)</label>
@@ -724,10 +724,10 @@
         mascaraCPF(this);
     });
 
-    // --- MÁSCARA DE CONTATO (xx) xxxx-xxxx ---
+    // --- MÁSCARA DE CONTATO (xx) 9xxxx-xxxx ---
     function mascaraTelefone(campo) {
-        let v = campo.value.replace(/\D/g, '').substring(0, 10);
-        if (v.length >= 7) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+        let v = campo.value.replace(/\D/g, '').substring(0, 11);
+        if (v.length >= 7) v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
         else if (v.length >= 3) v = v.replace(/(\d{2})(\d{0,4})/, '($1) $2');
         else if (v.length >= 1) v = v.replace(/(\d{0,2})/, '($1');
         campo.value = v;
@@ -807,10 +807,15 @@
         document.getElementById('btnSalvar').disabled = !podeEnviar;
         document.getElementById('btnBaixar').disabled = !podeEnviar;
     
+    // Salva município para pré-preencher próximo
+    if (!window._municipioPadrao) {
+        window._municipioPadrao = mun.toUpperCase();
+    }
+
     // Limpeza dos campos após sucesso
     document.getElementById('nome').value = '';
     document.getElementById('cpf').value = '';
-    document.getElementById('municipio').value = '';
+    document.getElementById('municipio').value = window._municipioPadrao || '';
     document.getElementById('nome_propriedade').value = '';
     document.getElementById('contato').value = '';
     document.getElementById('animais').value = '';
@@ -832,7 +837,10 @@
                 <td><span style="font-family:var(--mono);color:var(--muted);">${p.cpf}</span></td>
                 <td>${p.municipio || '—'}</td>
                 <td><span class="badge badge-blue">${p.quantidade_animais || 0}</span></td>
-                <td style="text-align:center;"><button class="btn btn-red btn-sm btn-del" onclick="remover(${index})">Excluir</button></td>
+                <td style="text-align:center;display:flex;gap:6px;justify-content:center;">
+                    <button class="btn btn-sm" style="background:#e8f5ee;color:#1a7a45;border:1px solid #b8d8c4" onclick="editarProdutor(${index})">✏️ Editar</button>
+                    <button class="btn btn-red btn-sm btn-del" onclick="remover(${index})">Excluir</button>
+                </td>
             </tr>`;
         });
     }
@@ -851,6 +859,28 @@
         const podeEnviar = listaTemporaria.length > 0 && totalAnimais >= 80;
         document.getElementById('btnSalvar').disabled = !podeEnviar;
         document.getElementById('btnBaixar').disabled = !podeEnviar;
+    }
+
+    function editarProdutor(index) {
+        const p = listaTemporaria[index];
+        document.getElementById('resp_nome').value = p.responsavel_preenchimento || '';
+        document.getElementById('nome').value = p.nome || '';
+        document.getElementById('cpf').value = p.cpf || '';
+        document.getElementById('municipio').value = p.municipio || '';
+        document.getElementById('nome_propriedade').value = p.nome_propriedade || '';
+        document.getElementById('contato').value = p.contato || '';
+        document.getElementById('animais').value = p.quantidade_animais || '';
+        document.getElementById('area_sombreada').value = p.area_sombreada ? 'SIM' : 'NAO';
+        document.getElementById('vacinacao').value = p.vacinacao_em_dia ? 'SIM' : 'NAO';
+        listaTemporaria.splice(index, 1);
+        atualizarTabela();
+        atualizarStats();
+        const totalAnimais = listaTemporaria.reduce((acc, p) => acc + (p.quantidade_animais || 0), 0);
+        const podeEnviar = listaTemporaria.length > 0 && totalAnimais >= 80;
+        document.getElementById('btnSalvar').disabled = !podeEnviar;
+        document.getElementById('btnBaixar').disabled = !podeEnviar;
+        document.getElementById('nome').focus();
+        window.scrollTo({top: document.getElementById('nome').getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth'});
     }
 
     // --- CONFIGURAÇÃO EMAIL ---
