@@ -1581,10 +1581,11 @@ function closeModal() {
   if (window._pendingNavPagamentos) {
     window._pendingNavPagamentos = false;
     showPage('pagamentos');
-  } else if (window._pendingReloadProdutores) {
-    const { id, nome } = window._pendingReloadProdutores;
-    window._pendingReloadProdutores = null;
-    if (id) listarProdutores(id, nome || _origemProjetoNome || '');
+  } else if (window._pendingMoveCard) {
+    // Executa a migração de aba após fechar o modal de sucesso
+    const cb = window._pendingMoveCard;
+    window._pendingMoveCard = null;
+    cb();
   }
 }
 
@@ -2092,48 +2093,53 @@ async function confirmarFatura(prodId, prodNome) {
       </div>`;
     document.getElementById('btn-pdf-fatura').addEventListener('click', () => { _abrirFaturaPDFObj(inserted); });
 
-    // Move o card imediatamente da aba "sem fatura" para "com fatura", sem recarregar a lista
-    const wrap = document.getElementById('wrap-' + prodId);
-    if (wrap) {
-      // 1. Atualiza data-tab
-      wrap.dataset.tab = 'aprov-com-fat';
+    // Ao fechar o modal de sucesso, mover o card de aba sem recarregar a lista
+    const _insCapture = inserted;
+    const _prodIdCapture = prodId;
+    const _prodNomeCapture = prodNome;
+    window._pendingMoveCard = function() {
+      const wrap = document.getElementById('wrap-' + _prodIdCapture);
+      if (wrap) {
+        // 1. Atualiza data-tab
+        wrap.dataset.tab = 'aprov-com-fat';
 
-      // 2. Troca o ícone do botão de fatura para o estado "emitida" (verde com check)
-      const btnFatCard = wrap.querySelector('.btn-fat-icon--new, .btn-fat-icon--off');
-      if (btnFatCard) {
-        btnFatCard.disabled = false;
-        btnFatCard.classList.remove('btn-fat-icon--new', 'btn-fat-icon--off');
-        btnFatCard.classList.add('btn-fat-icon--on');
-        btnFatCard.title = 'Fatura emitida — clique para ver/editar';
-        const _ins = inserted;
-        const _pn2 = prodNome;
-        btnFatCard.innerHTML = `<svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="3" y="1" width="13" height="18" rx="2" fill="#1a7a45" opacity=".15" stroke="#1a7a45" stroke-width="1.5"/>
-          <rect x="3" y="1" width="13" height="18" rx="2" stroke="#1a7a45" stroke-width="1.5"/>
-          <line x1="6.5" y1="6" x2="12.5" y2="6" stroke="#1a7a45" stroke-width="1.4" stroke-linecap="round"/>
-          <line x1="6.5" y1="9" x2="12.5" y2="9" stroke="#1a7a45" stroke-width="1.4" stroke-linecap="round"/>
-          <line x1="6.5" y1="12" x2="10" y2="12" stroke="#1a7a45" stroke-width="1.4" stroke-linecap="round"/>
-          <circle cx="17" cy="17" r="4" fill="#1a7a45"/>
-          <polyline points="14.8,17 16.3,18.5 19.2,15.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        </svg>`;
-        btnFatCard.onclick = function(e) { e.stopPropagation(); _abrirFaturaPDFObj(_ins, _pn2); };
+        // 2. Troca o ícone para "fatura emitida" (verde com check)
+        const btnFatCard = wrap.querySelector('.btn-fat-icon--new, .btn-fat-icon--off, .btn-fat-icon');
+        if (btnFatCard) {
+          btnFatCard.disabled = false;
+          btnFatCard.classList.remove('btn-fat-icon--new', 'btn-fat-icon--off');
+          btnFatCard.classList.add('btn-fat-icon--on');
+          btnFatCard.title = 'Fatura emitida — clique para ver/editar';
+          btnFatCard.innerHTML = `<svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="1" width="13" height="18" rx="2" fill="#1a7a45" opacity=".15" stroke="#1a7a45" stroke-width="1.5"/>
+            <rect x="3" y="1" width="13" height="18" rx="2" stroke="#1a7a45" stroke-width="1.5"/>
+            <line x1="6.5" y1="6" x2="12.5" y2="6" stroke="#1a7a45" stroke-width="1.4" stroke-linecap="round"/>
+            <line x1="6.5" y1="9" x2="12.5" y2="9" stroke="#1a7a45" stroke-width="1.4" stroke-linecap="round"/>
+            <line x1="6.5" y1="12" x2="10" y2="12" stroke="#1a7a45" stroke-width="1.4" stroke-linecap="round"/>
+            <circle cx="17" cy="17" r="4" fill="#1a7a45"/>
+            <polyline points="14.8,17 16.3,18.5 19.2,15.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>`;
+          const _ins2 = _insCapture;
+          const _pn2  = _prodNomeCapture;
+          btnFatCard.onclick = function(e) { e.stopPropagation(); _abrirFaturaPDFObj(_ins2, _pn2); };
+        }
+
+        // 3. Reaplica filtro — como a aba ativa ainda é 'aprov-sem-fat', o card some dessa aba
+        const searchInput = document.querySelector('.prod-search input');
+        const q = searchInput ? searchInput.value.toLowerCase() : '';
+        const visTab   = _prodTabAtiva === 'todos' || wrap.dataset.tab === _prodTabAtiva;
+        const visSearch = !q || wrap.textContent.toLowerCase().includes(q);
+        wrap.style.display = (visTab && visSearch) ? '' : 'none';
       }
 
-      // 3. Reaplica o filtro para esconder o card da aba atual se necessário
-      const searchInput = document.querySelector('.prod-search input');
-      const q = searchInput ? searchInput.value.toLowerCase() : '';
-      const visTab   = _prodTabAtiva === 'todos' || wrap.dataset.tab === _prodTabAtiva;
-      const visSearch = !q || wrap.textContent.toLowerCase().includes(q);
-      wrap.style.display = (visTab && visSearch) ? '' : 'none';
-    }
-
-    // Atualiza contadores das abas (sem fatura -1, com fatura +1)
-    try {
-      const tabSemFat  = document.querySelector('.pft-sem-fat .pft-badge');
-      const tabComFat  = document.querySelector('.pft-com-fat .pft-badge');
-      if (tabSemFat)  tabSemFat.textContent  = Math.max(0, parseInt(tabSemFat.textContent  || 0) - 1);
-      if (tabComFat)  tabComFat.textContent  = parseInt(tabComFat.textContent  || 0) + 1;
-    } catch(_) {}
+      // 4. Atualiza contadores das abas
+      try {
+        const tabSemFat = document.querySelector('.pft-sem-fat .pft-badge');
+        const tabComFat = document.querySelector('.pft-com-fat .pft-badge');
+        if (tabSemFat) tabSemFat.textContent = Math.max(0, parseInt(tabSemFat.textContent || 0) - 1);
+        if (tabComFat) tabComFat.textContent = parseInt(tabComFat.textContent || 0) + 1;
+      } catch(_) {}
+    };
   } catch(e) { toast(e.message,'error'); }
 }
 
