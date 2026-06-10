@@ -2419,6 +2419,7 @@ CREATE TABLE IF NOT EXISTS contratos_pro_especiais.produtores (
   quantidade_animais  integer NOT NULL CHECK (quantidade_animais BETWEEN 30 AND 45),
   raca                text,
   status              text NOT NULL DEFAULT 'pendente' CONSTRAINT produtores_status_check CHECK (status IN ('pendente', 'aprovado', 'reprovado', 'enviado')),
+  email_enviado       boolean NOT NULL DEFAULT false,
   observacoes         text,
   created_at          timestamptz DEFAULT now(),
   updated_at          timestamptz DEFAULT now()
@@ -3859,7 +3860,7 @@ async function _marcarLoteComoEnviado(loteKey) {
     try {
       const { error } = await sb.schema('contratos_pro_especiais')
         .from('produtores')
-        .update({ status: 'enviado' })
+        .update({ status: 'enviado', email_enviado: true })
         .in('id', idsAprovados);
       if (error) throw error;
     } catch(e) {
