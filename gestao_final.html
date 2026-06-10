@@ -3664,10 +3664,18 @@ Sistema de Gestão FAEC`;
     }
   }
 
-  // Marca o lote como enviado no estado local e muda para fase 'fatura_aberta'
+  // Atualiza estado local: itens aprovados → 'enviado', recalcula contadores e força fase
+  const idsEnviados = new Set(idsAprovados);
   _esteiraLotes = _esteiraLotes.map(l => {
     if (l.key !== loteKey) return l;
-    return { ...l, emailEnviado: true, fase: 'fatura_aberta' };
+    const itensAtualizados = l.itens.map(p =>
+      idsEnviados.has(p.id) ? { ...p, status: 'enviado' } : p
+    );
+    const enviados = itensAtualizados.filter(p => p.status === 'enviado').length;
+    const aprov    = itensAtualizados.filter(p => p.status === 'aprovado').length;
+    const reprov   = itensAtualizados.filter(p => p.status === 'reprovado').length;
+    const pend     = itensAtualizados.filter(p => !p.status || p.status === 'pendente').length;
+    return { ...l, itens: itensAtualizados, enviados, aprov, reprov, pend, emailEnviado: true, fase: 'fatura_aberta' };
   });
 
   const reprovados = lote.itens.filter(p => p.status === 'reprovado');
