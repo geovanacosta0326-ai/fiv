@@ -498,6 +498,41 @@ textarea { resize: vertical; min-height: 72px; }
     .pac-btn-fat:hover:not(:disabled) { background:rgba(217,119,6,.18); border-color:#d97706; }
     .pac-btn-fat:disabled { opacity:.42; cursor:not-allowed; }
 
+    /* ── Ícone SVG de Fatura ── */
+    .btn-fat-icon {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:32px; height:32px; border-radius:8px;
+      border:1.5px solid transparent; background:transparent;
+      cursor:pointer; transition:all .18s; padding:0; flex-shrink:0;
+    }
+    .btn-fat-icon svg { width:22px; height:22px; display:block; transition:transform .15s; }
+    .btn-fat-icon--new {
+      border-color:rgba(180,83,9,.35);
+      background:rgba(217,119,6,.07);
+    }
+    .btn-fat-icon--new:hover {
+      background:rgba(217,119,6,.16);
+      border-color:#d97706;
+      transform:translateY(-1px);
+    }
+    .btn-fat-icon--new:hover svg { transform:scale(1.08); }
+    .btn-fat-icon--on:not(.btn-fat-icon--new) {
+      border-color:rgba(26,122,69,.35);
+      background:rgba(26,122,69,.07);
+    }
+    .btn-fat-icon--on:not(.btn-fat-icon--new):hover {
+      background:rgba(26,122,69,.15);
+      border-color:#1a7a45;
+      transform:translateY(-1px);
+    }
+    .btn-fat-icon--on:not(.btn-fat-icon--new):hover svg { transform:scale(1.08); }
+    .btn-fat-icon--off {
+      border-color:#e0e0e0;
+      background:#f7f7f7;
+      cursor:not-allowed;
+      opacity:.55;
+    }
+
 
     /* ── Card expansível ── */
     .prod-card-wrap { display:flex; flex-direction:column; }
@@ -1778,11 +1813,41 @@ async function listarProdutores(projetoId, projetoNome) {
           <div></div>
           <div class="pactions" onclick="event.stopPropagation()">
             ${isGestor() ? `
-              ${isAprov && !hasFat ? (rebanhoOk
-                ? `<button class="pac-btn-fat pac-fatura" title="Emitir Fatura" onclick="_origemProjetoId='${projetoId}';_origemProjetoNome='${projetoNome.replace(/'/g,"\\'")}';gerarFatura('${r.id}','${r.nome.replace(/'/g,"\\'")}')">🧾 Emitir Fatura</button>`
-                : `<button id="btn-emitir-fat-${r.id}" class="pac-btn-fat" disabled title="Preencha Animais Aptos e Prenhezes e clique Salvar para habilitar">🔒 Emitir Fatura</button>`
+              ${isAprov && !fatPaga ? (hasFat
+                ? `<button class="btn-fat-icon btn-fat-icon--on" title="Fatura emitida — clique para ver/editar" onclick="event.stopPropagation();_origemProjetoId='${projetoId}';_origemProjetoNome='${projetoNome.replace(/'/g,"\\'")}';gerarFatura('${r.id}','${r.nome.replace(/'/g,"\\'")}')">
+                    <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="3" y="1" width="13" height="18" rx="2" fill="#1a7a45" opacity=".15" stroke="#1a7a45" stroke-width="1.5"/>
+                      <rect x="3" y="1" width="13" height="18" rx="2" stroke="#1a7a45" stroke-width="1.5"/>
+                      <line x1="6.5" y1="6" x2="12.5" y2="6" stroke="#1a7a45" stroke-width="1.4" stroke-linecap="round"/>
+                      <line x1="6.5" y1="9" x2="12.5" y2="9" stroke="#1a7a45" stroke-width="1.4" stroke-linecap="round"/>
+                      <line x1="6.5" y1="12" x2="10" y2="12" stroke="#1a7a45" stroke-width="1.4" stroke-linecap="round"/>
+                      <circle cx="17" cy="17" r="4" fill="#1a7a45"/>
+                      <polyline points="14.8,17 16.3,18.5 19.2,15.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </svg>
+                  </button>`
+                : rebanhoOk
+                  ? `<button id="btn-emitir-fat-${r.id}" class="btn-fat-icon btn-fat-icon--on btn-fat-icon--new" title="Emitir Fatura" onclick="event.stopPropagation();_origemProjetoId='${projetoId}';_origemProjetoNome='${projetoNome.replace(/'/g,"\\'")}';gerarFatura('${r.id}','${r.nome.replace(/'/g,"\\'")}')">
+                      <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="1" width="13" height="18" rx="2" stroke="#b45309" stroke-width="1.5"/>
+                        <line x1="6.5" y1="6" x2="12.5" y2="6" stroke="#b45309" stroke-width="1.4" stroke-linecap="round"/>
+                        <line x1="6.5" y1="9" x2="12.5" y2="9" stroke="#b45309" stroke-width="1.4" stroke-linecap="round"/>
+                        <line x1="6.5" y1="12" x2="10" y2="12" stroke="#b45309" stroke-width="1.4" stroke-linecap="round"/>
+                        <circle cx="17" cy="17" r="4" fill="#b45309"/>
+                        <line x1="17" y1="14.8" x2="17" y2="17.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
+                        <circle cx="17" cy="19.1" r=".7" fill="#fff"/>
+                      </svg>
+                    </button>`
+                  : `<button id="btn-emitir-fat-${r.id}" class="btn-fat-icon btn-fat-icon--off" disabled title="Preencha Animais Aptos e Prenhezes e clique Salvar para habilitar">
+                      <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="1" width="13" height="18" rx="2" stroke="#bbb" stroke-width="1.5"/>
+                        <line x1="6.5" y1="6" x2="12.5" y2="6" stroke="#bbb" stroke-width="1.4" stroke-linecap="round"/>
+                        <line x1="6.5" y1="9" x2="12.5" y2="9" stroke="#bbb" stroke-width="1.4" stroke-linecap="round"/>
+                        <line x1="6.5" y1="12" x2="10" y2="12" stroke="#bbb" stroke-width="1.4" stroke-linecap="round"/>
+                        <circle cx="17" cy="17" r="4" fill="none" stroke="#bbb" stroke-width="1.3"/>
+                        <line x1="14.8" y1="14.8" x2="19.2" y2="19.2" stroke="#bbb" stroke-width="1.3" stroke-linecap="round"/>
+                      </svg>
+                    </button>`
               ) : ''}
-              ${isAprov && hasFat && !fatPaga ? `<button class="pac-btn pac-fatura" title="Gerar Fatura" onclick="_origemProjetoId='${projetoId}';_origemProjetoNome='${projetoNome.replace(/'/g,"\\'")}';gerarFatura('${r.id}','${r.nome.replace(/'/g,"\\'")}')">🧾</button>` : ''}
               ${!isAprov && r.status!=='reprovado' ? `<button class="pac-btn pac-aprovar"  title="Aprovar" onclick="mudarStatusProdutor('${r.id}','aprovado','${projetoId}','${projetoNome.replace(/'/g,"\\'")}')">✅</button>` : ''}
               ${r.status!=='reprovado' && !fatPaga ? `<button class="pac-btn pac-reprovar" title="Reprovar" onclick="mudarStatusProdutor('${r.id}','reprovado','${projetoId}','${projetoNome.replace(/'/g,"\\'")}')">❌</button>` : ''}
               ${fatPaga ? '<span style="font-size:.7rem;color:#1d4ed8;background:#dbeafe;padding:3px 8px;border-radius:6px;font-weight:600">💳 Pago</span>' : ''}
@@ -2026,8 +2091,49 @@ async function confirmarFatura(prodId, prodNome) {
         </div>
       </div>`;
     document.getElementById('btn-pdf-fatura').addEventListener('click', () => { _abrirFaturaPDFObj(inserted); });
-    // Após fechar o modal, recarrega a lista de produtores (card vai para aba "com fatura")
-    window._pendingReloadProdutores = { id: _origemProjetoId || inserted?.produtores?.projeto_id, nome: _origemProjetoNome };
+
+    // Move o card imediatamente da aba "sem fatura" para "com fatura", sem recarregar a lista
+    const wrap = document.getElementById('wrap-' + prodId);
+    if (wrap) {
+      // 1. Atualiza data-tab
+      wrap.dataset.tab = 'aprov-com-fat';
+
+      // 2. Troca o ícone do botão de fatura para o estado "emitida" (verde com check)
+      const btnFatCard = wrap.querySelector('.btn-fat-icon--new, .btn-fat-icon--off');
+      if (btnFatCard) {
+        btnFatCard.disabled = false;
+        btnFatCard.classList.remove('btn-fat-icon--new', 'btn-fat-icon--off');
+        btnFatCard.classList.add('btn-fat-icon--on');
+        btnFatCard.title = 'Fatura emitida — clique para ver/editar';
+        const _ins = inserted;
+        const _pn2 = prodNome;
+        btnFatCard.innerHTML = `<svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="1" width="13" height="18" rx="2" fill="#1a7a45" opacity=".15" stroke="#1a7a45" stroke-width="1.5"/>
+          <rect x="3" y="1" width="13" height="18" rx="2" stroke="#1a7a45" stroke-width="1.5"/>
+          <line x1="6.5" y1="6" x2="12.5" y2="6" stroke="#1a7a45" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="6.5" y1="9" x2="12.5" y2="9" stroke="#1a7a45" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="6.5" y1="12" x2="10" y2="12" stroke="#1a7a45" stroke-width="1.4" stroke-linecap="round"/>
+          <circle cx="17" cy="17" r="4" fill="#1a7a45"/>
+          <polyline points="14.8,17 16.3,18.5 19.2,15.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>`;
+        btnFatCard.onclick = function(e) { e.stopPropagation(); _abrirFaturaPDFObj(_ins, _pn2); };
+      }
+
+      // 3. Reaplica o filtro para esconder o card da aba atual se necessário
+      const searchInput = document.querySelector('.prod-search input');
+      const q = searchInput ? searchInput.value.toLowerCase() : '';
+      const visTab   = _prodTabAtiva === 'todos' || wrap.dataset.tab === _prodTabAtiva;
+      const visSearch = !q || wrap.textContent.toLowerCase().includes(q);
+      wrap.style.display = (visTab && visSearch) ? '' : 'none';
+    }
+
+    // Atualiza contadores das abas (sem fatura -1, com fatura +1)
+    try {
+      const tabSemFat  = document.querySelector('.pft-sem-fat .pft-badge');
+      const tabComFat  = document.querySelector('.pft-com-fat .pft-badge');
+      if (tabSemFat)  tabSemFat.textContent  = Math.max(0, parseInt(tabSemFat.textContent  || 0) - 1);
+      if (tabComFat)  tabComFat.textContent  = parseInt(tabComFat.textContent  || 0) + 1;
+    } catch(_) {}
   } catch(e) { toast(e.message,'error'); }
 }
 
@@ -2654,14 +2760,23 @@ async function salvarRebanho(prodId, projetoId, projetoNome) {
     if (btnFat && aptos > 0 && prenhez > 0) {
       const nomeProd = document.querySelector('#wrap-' + prodId + ' .pname')?.textContent?.replace(/▼/g,'').trim() || '';
       btnFat.disabled = false;
-      btnFat.style.opacity = '1';
-      btnFat.style.cursor = 'pointer';
+      btnFat.classList.remove('btn-fat-icon--off');
+      btnFat.classList.add('btn-fat-icon--on', 'btn-fat-icon--new');
       btnFat.title = 'Emitir Fatura';
+      btnFat.innerHTML = `<svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="1" width="13" height="18" rx="2" stroke="#b45309" stroke-width="1.5"/>
+        <line x1="6.5" y1="6" x2="12.5" y2="6" stroke="#b45309" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="6.5" y1="9" x2="12.5" y2="9" stroke="#b45309" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="6.5" y1="12" x2="10" y2="12" stroke="#b45309" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="17" cy="17" r="4" fill="#b45309"/>
+        <line x1="17" y1="14.8" x2="17" y2="17.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="17" cy="19.1" r=".7" fill="#fff"/>
+      </svg>`;
       const _pj = projetoId;
       const _pn = projetoNome;
       const _pid = prodId;
       const _nom = nomeProd;
-      btnFat.onclick = function() { _origemProjetoId = _pj; _origemProjetoNome = _pn; gerarFatura(_pid, _nom); };
+      btnFat.onclick = function(e) { e.stopPropagation(); _origemProjetoId = _pj; _origemProjetoNome = _pn; gerarFatura(_pid, _nom); };
     }
   } catch(e) { toast('Erro ao salvar: ' + e.message, 'error'); }
 }
@@ -2724,7 +2839,7 @@ async function mudarStatusProdutor(id, novoStatus, projetoId, projetoNome) {
       const pn = projetoNome.replace(/'/g, "\\'");
       if (novoStatus === 'aprovado') {
         pactions.innerHTML =
-          `<button class="pac-btn pac-fatura" title="Gerar Fatura" onclick="_origemProjetoId='${pj}';_origemProjetoNome='${pn}';gerarFatura('${id}','')">&#x1F9FE;</button>` +
+          `<button class="btn-fat-icon btn-fat-icon--on btn-fat-icon--new" title="Emitir Fatura" onclick="event.stopPropagation();_origemProjetoId='${pj}';_origemProjetoNome='${pn}';gerarFatura('${id}','')"><svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="1" width="13" height="18" rx="2" stroke="#b45309" stroke-width="1.5"/><line x1="6.5" y1="6" x2="12.5" y2="6" stroke="#b45309" stroke-width="1.4" stroke-linecap="round"/><line x1="6.5" y1="9" x2="12.5" y2="9" stroke="#b45309" stroke-width="1.4" stroke-linecap="round"/><line x1="6.5" y1="12" x2="10" y2="12" stroke="#b45309" stroke-width="1.4" stroke-linecap="round"/><circle cx="17" cy="17" r="4" fill="#b45309"/><line x1="17" y1="14.8" x2="17" y2="17.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/><circle cx="17" cy="19.1" r=".7" fill="#fff"/></svg></button>` +
           `<button class="pac-btn pac-reprovar" title="Reprovar" onclick="mudarStatusProdutor('${id}','reprovado','${pj}','${pn}')">&#x274C;</button>`;
       } else {
         pactions.innerHTML =
