@@ -3325,8 +3325,8 @@ async function renderEsteira() {
       const pend      = itens.filter(p => !p.status || p.status === 'pendente').length;
       const todos     = itens.length;
 
-      // Se todos os aprovados já foram enviados, mostra na coluna "E-mail Enviado"
-      const emailEnviado   = enviados > 0 && aprovados === 0 && pend === 0;
+      // Se tem qualquer produtor 'enviado', o lote já foi enviado (E-mail Enviado)
+      const emailEnviado   = enviados > 0;
       const todosDecididos = pend === 0 && todos > 0;
       const faturada       = false;
       const dataCriacao    = itens.reduce((m, p) => p.created_at < m ? p.created_at : m, itens[0].created_at);
