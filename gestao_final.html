@@ -3807,6 +3807,7 @@ async function enviarEmailLote(loteKey) {
     'N°': i + 1,
     'Nome do Produtor/Produto': p.nome || '—',
     'CPF': fmtCPF(p.cpf),
+    'Nome da Propriedade': p.nome_propriedade || '—',
     'Município': p.municipio || '—',
     'Contato': p.contato || '—',
     'Qtd. Animais Aptos': p.quantidade_animais || 0,
@@ -3814,7 +3815,7 @@ async function enviarEmailLote(loteKey) {
     'Responsável': p.responsavel_preenchimento || '—',
   }));
   const ws = XLSX.utils.json_to_sheet(dadosExcel);
-  ws['!cols'] = [{wch:5},{wch:35},{wch:14},{wch:22},{wch:16},{wch:18},{wch:30},{wch:30}];
+  ws['!cols'] = [{wch:5},{wch:35},{wch:14},{wch:28},{wch:22},{wch:16},{wch:18},{wch:30},{wch:30}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Aprovados');
 
@@ -3826,21 +3827,19 @@ async function enviarEmailLote(loteKey) {
   const corpoDefault =
 `Prezada Geovana,
 
-Encaminho demanda de credenciamento FIV aprovada para processamento.
+Encaminho demanda FIV aprovada para processamento.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-RESUMO DO LOTE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Sindicato  : ${lote.sindicato || '—'}
-Responsável: ${lote.responsavel || '—'}
+Sindicato  : ${lote.sindicato || '-'}
+Responsavel: ${lote.responsavel || '-'}
 Aprovados  : ${aprovados.length}
-Total Animais: ${totalAnimais}
+Animais    : ${totalAnimais}
 Data       : ${hoje}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PRODUTORES APROVADOS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PRODUTORES APROVADOS:
 ${linhas}
+
+ANEXO: ${nomeArq}
+(Arquivo baixado em Downloads - anexe antes de enviar)
 
 Atenciosamente,
 Sistema de Gestão FAEC`;
