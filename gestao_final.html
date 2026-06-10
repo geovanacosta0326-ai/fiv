@@ -3673,15 +3673,9 @@ Sistema de Gestão FAEC`;
   const reprovados = lote.itens.filter(p => p.status === 'reprovado');
   toast(`📧 E-mail preparado! ${aprovados.length} aprovado(s) marcado(s) como enviado. ${reprovados.length > 0 ? reprovados.length + ' reprovado(s) registrado(s).' : ''}`);
 
-  // Mostra o badge "enviado" na tela atual e redireciona para Pagamentos
-  // Pequeno delay para o usuário ver a confirmação antes de navegar
-  setTimeout(async () => {
-    await showPage('pagamentos');
-    // Após renderizar pagamentos, clica na aba "Aprovados sem fatura"
-    setTimeout(() => {
-      const tabSemFat = document.querySelector('.pft.pft-sem-fat');
-      if (tabSemFat) tabSemFat.click();
-    }, 300);
+  // Volta para a lista da esteira — o lote já aparecerá na coluna "E-mail Enviado"
+  setTimeout(() => {
+    _renderEsteiraLista(document.getElementById('content'));
   }, 1200);
 }
 
