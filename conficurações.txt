@@ -1,0 +1,9 @@
+git add gestao_final.html
+git commit -m "feat: envio de email via Resend"
+git push
+
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0bW5sdHhkcW9lc3VkaXVxaHh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5OTEyMDQsImV4cCI6MjA5NDU2NzIwNH0.P4B6FrBwcgO904mDCOVIe0pxUjpzeXm1-77jMM0cDUQ
+
+
+https://geovanacosta0326-ai.github.io/fiv/
