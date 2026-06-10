@@ -688,7 +688,7 @@ textarea { resize: vertical; min-height: 72px; }
     /* Tabela de produtores do lote */
     .ed-prod-list { display:flex; flex-direction:column; gap:0; }
     .ed-prod-row {
-      display:grid; grid-template-columns:2fr 1.2fr 1fr 0.7fr 110px 100px;
+      display:grid; grid-template-columns:2fr 1.4fr 1.2fr 1fr 0.7fr 110px 120px;
       align-items:center; gap:10px; padding:12px 16px;
       background:#fff; border:1px solid var(--border);
       border-bottom:none; font-size:.82rem; transition:background .15s;
@@ -702,7 +702,7 @@ textarea { resize: vertical; min-height: 72px; }
     .ed-prod-row.borda-pend   { border-left:3px solid #d97706; }
 
     .ed-prod-head {
-      display:grid; grid-template-columns:2fr 1.2fr 1fr 0.7fr 110px 100px;
+      display:grid; grid-template-columns:2fr 1.4fr 1.2fr 1fr 0.7fr 110px 120px;
       gap:10px; padding:8px 16px;
       background:var(--green-dark); color:#fff;
       font-size:.68rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
@@ -3676,6 +3676,7 @@ function abrirLote(key) {
         <div class="ed-nome">${p.nome || '—'}</div>
         <div class="ed-cpf">${fmtCPF(p.cpf)}</div>
       </div>
+      <div class="ed-muni" style="font-size:.8rem;color:var(--muted)">${p.nome_propriedade || '—'}</div>
       <div class="ed-muni">${p.municipio || '—'}</div>
       <div class="ed-cont">${p.contato || '—'}</div>
       <div class="ed-anim">${p.quantidade_animais || '—'}</div>
@@ -3720,6 +3721,7 @@ function abrirLote(key) {
 
     <div class="ed-prod-head">
       <span>Produtor / CPF</span>
+      <span>Nome da Propriedade</span>
       <span>Município</span>
       <span>Contato</span>
       <span style="text-align:center">Animais</span>
@@ -4097,6 +4099,39 @@ function copiarLink(id) {
 }
 
 
+
+  function abrirEmailAnexo(prodId, nome) {
+    const input = document.getElementById('file-' + prodId);
+    if (input) input.click();
+  }
+
+  function enviarEmailComAnexo(prodId, nome) {
+    const input = document.getElementById('file-' + prodId);
+    if (!input || !input.files.length) return;
+    const arquivo = input.files[0];
+    const assunto = encodeURIComponent('[FAEC] Documentos - ' + nome);
+    const corpo = encodeURIComponent(
+`Prezada Geovana,
+
+Segue em anexo o arquivo referente ao produtor:
+
+Produtor: ${nome}
+
+Atenciosamente,
+Sistema de Gestão FAEC`
+    );
+    // Baixa o arquivo selecionado e abre o cliente de email
+    const url = URL.createObjectURL(arquivo);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = arquivo.name;
+    a.click();
+    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      window.location.href = `mailto:geovana@senarce.org.br?subject=${assunto}&body=${corpo}`;
+    }, 800);
+    input.value = '';
+  }
 </script>
 </body>
 </html>
