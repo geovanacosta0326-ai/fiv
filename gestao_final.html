@@ -2418,7 +2418,7 @@ CREATE TABLE IF NOT EXISTS contratos_pro_especiais.produtores (
   sindicato           text NOT NULL,
   quantidade_animais  integer NOT NULL CHECK (quantidade_animais BETWEEN 30 AND 45),
   raca                text,
-  status              text NOT NULL DEFAULT 'pendente',
+  status              text NOT NULL DEFAULT 'pendente' CONSTRAINT produtores_status_check CHECK (status IN ('pendente', 'aprovado', 'reprovado', 'enviado')),
   observacoes         text,
   created_at          timestamptz DEFAULT now(),
   updated_at          timestamptz DEFAULT now()
