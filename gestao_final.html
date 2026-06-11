@@ -1993,6 +1993,14 @@ function renderFormCredenciamento() {
             <label>Nome do Sindicato <span class="req">*</span></label>
             <input type="text" id="f-sindicato" placeholder="STR de …">
           </div>
+          <div class="field-group">
+            <label>Nome da Propriedade</label>
+            <input type="text" id="f-propriedade" placeholder="Nome da fazenda / propriedade">
+          </div>
+          <div class="field-group">
+            <label>Contato (WhatsApp / Telefone)</label>
+            <input type="text" id="f-contato" placeholder="(00) 00000-0000">
+          </div>
         </div>
       </div>
 
@@ -2065,6 +2073,8 @@ async function salvarCredenciamento() {
       endereco:          document.getElementById('f-endereco').value.trim()||null,
       municipio,
       sindicato,
+      nome_propriedade:  document.getElementById('f-propriedade').value.trim()||null,
+      contato:           document.getElementById('f-contato').value.trim()||null,
       quantidade_animais: animais,
       raca:              document.getElementById('f-raca').value.trim()||null,
       observacoes:       document.getElementById('f-obs').value.trim()||null,
