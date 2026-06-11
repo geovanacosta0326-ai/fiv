@@ -1072,7 +1072,7 @@ async function renderPainel() {
       sb.schema(SCHEMA).from('projetos').select('id,nome,status,created_at').order('created_at',{ascending:false}),
       sb.schema(SCHEMA).from('produtores').select('id,nome,projeto_id,municipio,quantidade_animais,status,created_at'),
       sb.schema(SCHEMA).from('faturas').select('id,valor,valor_pago,status,produtor_id,created_at').order('created_at',{ascending:false}),
-      sb.schema(SCHEMA).from('resultados_fiv').select('produtor_id,animais_aptos,animais_implantados,prenhezes_confirmadas,nascimentos,created_at,produtores(id,status)'),
+      sb.schema('contratos_pro_especiais').from('resultados_fiv').select('produtor_id,animais_aptos,animais_implantados,prenhezes_confirmadas,nascimentos,created_at'),
     ]);
     const projetos  = projRes.data  || [];
     const produtores= prodRes.data  || [];
@@ -1088,9 +1088,11 @@ async function renderPainel() {
     const fmtNum = n => (n||0).toLocaleString('pt-BR');
 
     // status produtores
-    const aprovados = produtores.filter(p=>['aprovado','enviado'].includes((p.status||'').toLowerCase()));
-    const pendentes = produtores.filter(p=>(p.status||'').toLowerCase()==='pendente');
-    const outros    = produtores.length - aprovados.length - pendentes.length;
+    const aprovados  = produtores.filter(p=>['aprovado','enviado'].includes((p.status||'').toLowerCase()));
+    const soPendente = produtores.filter(p=>(p.status||'').toLowerCase()==='pendente');
+    const pendentes  = soPendente;
+    const reprovados = produtores.filter(p=>(p.status||'').toLowerCase()==='reprovado');
+    const outros     = produtores.length - aprovados.length - soPendente.length - reprovados.length;
     const aprovadosIds = new Set(aprovados.map(p=>String(p.id)));
 
     // produtores por projeto (aprovados)
@@ -1112,15 +1114,11 @@ async function renderPainel() {
     const propriedades = aprovComReb.length;
     const mediaRebanho = propriedades ? (totalAnimais/propriedades) : 0;
 
-    // FIV (apenas de produtores aprovados — via join)
-    const fivAprov = fivs.filter(r =>
-      ['aprovado','enviado'].includes((r.produtores?.status||'').toLowerCase()) ||
-      aprovadosIds.has(String(r.produtor_id))
-    );
-    const fivBase = fivAprov.length > 0 ? fivAprov : fivs;
+    // FIV (todos os registros)
+    const fivBase = fivs;
     const sumK = k => fivBase.reduce((s,r)=>s+(parseInt(r[k]||0,10)),0);
     const totAptos   = sumK('animais_aptos');
-    const totImpl    = sumK('animais_implantados');
+    const totImpl    = fivBase.reduce((s,r)=>s+(parseInt(r.animais_implantados||r.animais_aptos||0,10)),0);
     const totPrenhez = sumK('prenhezes_confirmadas');
     const totNasc    = sumK('nascimentos');
 
@@ -1174,11 +1172,12 @@ async function renderPainel() {
     const prodMap = Object.fromEntries(produtores.map(p=>[p.id,p.nome]));
 
     // Donut: status produtores
-    const totalProd = produtores.length || 1;
-    const pctAprov  = (aprovados.length/totalProd)*100;
-    const pctPend   = (pendentes.length/totalProd)*100;
-    const pctOutros = (outros/totalProd)*100;
-    const donut = `conic-gradient(#15803d 0 ${pctAprov}%, #f59e0b ${pctAprov}% ${pctAprov+pctPend}%, #cbd5e1 ${pctAprov+pctPend}% 100%)`;
+    const totalProd  = produtores.length || 1;
+    const pctAprov   = (aprovados.length/totalProd)*100;
+    const pctPend    = (soPendente.length/totalProd)*100;
+    const pctReprov  = (reprovados.length/totalProd)*100;
+    const pctOutros  = (outros/totalProd)*100;
+    const donut = `conic-gradient(#15803d 0 ${pctAprov}%, #f59e0b ${pctAprov}% ${pctAprov+pctPend}%, #c0392b ${pctAprov+pctPend}% ${pctAprov+pctPend+pctReprov}%, #cbd5e1 ${pctAprov+pctPend+pctReprov}% 100%)`;
 
     // Receita: % recebida
     const pctPago = totalFat > 0 ? ((totalPago / totalFat) * 100).toFixed(1) : '0.0';
@@ -1192,8 +1191,13 @@ async function renderPainel() {
             <div style="font-size:1.25rem;font-weight:800;color:var(--text)">Visão Geral do Sistema</div>
             <div style="font-size:.8rem;color:var(--muted);margin-top:3px">Dados consolidados de todos os projetos e produtores</div>
           </div>
-          <div style="font-size:.75rem;color:var(--muted);font-family:var(--mono);background:var(--green-pale);padding:6px 14px;border-radius:20px;border:1px solid var(--border)">
-            🕐 ${hojeFormatado()}
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div style="font-size:.75rem;color:var(--muted);font-family:var(--mono);background:var(--green-pale);padding:6px 14px;border-radius:20px;border:1px solid var(--border)">
+              🕐 ${hojeFormatado()}
+            </div>
+            <button onclick="renderPainel()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:#fff;font-family:var(--font);font-size:.78rem;font-weight:600;color:var(--accent2);cursor:pointer">
+              🔄 Atualizar
+            </button>
           </div>
         </div>
 
@@ -1268,14 +1272,9 @@ async function renderPainel() {
               <!-- Prenhezes Confirmadas -->
               <div style="background:#f8faf9;border:1px solid #e2e8e4;border-radius:12px;padding:18px 20px;position:relative;overflow:hidden">
                 <div style="font-size:.66rem;color:#6b8c7a;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:10px">Prenhezes Confirmadas</div>
-                <div style="font-size:2rem;font-weight:800;color:#0f2a1a;font-family:var(--mono);line-height:1">${fmtNum(totPrenhez)}</div>
-                <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-                  <div style="flex:1;height:5px;background:#e2e8e4;border-radius:99px;overflow:hidden">
-                    <div style="height:100%;width:${Math.min(100,parseFloat(pctPrenhez))}%;background:#1a7a45;border-radius:99px"></div>
-                  </div>
-                  <span style="font-size:.74rem;font-weight:800;color:#1a7a45;font-family:var(--mono)">${pctPrenhez}%</span>
-                </div>
-                <div style="font-size:.66rem;color:#6b8c7a;margin-top:2px">${fmtNum(totImpl)} implantados</div>
+                <div style="font-size:2rem;font-weight:800;color:#1a7a45;font-family:var(--mono);line-height:1">${fmtNum(totPrenhez)}</div>
+                <div style="font-size:.72rem;color:#6b8c7a;margin-top:6px">de ${fmtNum(totAptos)} animais aptos</div>
+                <div style="font-size:.72rem;color:#6b8c7a;margin-top:2px">${totAptos > 0 ? ((totPrenhez/totAptos)*100).toFixed(1) + '% de taxa' : '— sem dados de aptos'}</div>
                 ${varPrenhez.pct !== null ? `
                 <div style="display:inline-flex;align-items:center;gap:4px;margin-top:10px;padding:3px 10px;background:${varPrenhez.cor+'18'};border-radius:20px;border:1px solid ${varPrenhez.cor+'30'}">
                   <span style="font-size:.7rem;font-weight:800;color:${varPrenhez.cor}">${varPrenhez.sinal} ${Math.abs(varPrenhez.pct)}%</span>
@@ -1308,23 +1307,35 @@ async function renderPainel() {
                 <div style="display:flex;align-items:center;justify-content:space-between;background:#f0fdf4;border-radius:8px;padding:8px 12px">
                   <div style="display:flex;align-items:center;gap:8px">
                     <div style="width:10px;height:10px;border-radius:3px;background:#15803d;flex-shrink:0"></div>
-                    <span style="font-size:.82rem;font-weight:500">Aprovados</span>
+                    <span style="font-size:.82rem;font-weight:500">Aprovados / Enviados</span>
                   </div>
                   <div style="text-align:right">
                     <span style="font-family:var(--mono);font-weight:800;color:#15803d;font-size:.9rem">${aprovados.length}</span>
                     <span style="font-size:.7rem;color:var(--muted);margin-left:4px">${pctAprov.toFixed(0)}%</span>
                   </div>
                 </div>
+                ${soPendente.length > 0 ? `
                 <div style="display:flex;align-items:center;justify-content:space-between;background:#fffbeb;border-radius:8px;padding:8px 12px">
                   <div style="display:flex;align-items:center;gap:8px">
                     <div style="width:10px;height:10px;border-radius:3px;background:#f59e0b;flex-shrink:0"></div>
                     <span style="font-size:.82rem;font-weight:500">Pendentes</span>
                   </div>
                   <div style="text-align:right">
-                    <span style="font-family:var(--mono);font-weight:800;color:#d97706;font-size:.9rem">${pendentes.length}</span>
+                    <span style="font-family:var(--mono);font-weight:800;color:#d97706;font-size:.9rem">${soPendente.length}</span>
                     <span style="font-size:.7rem;color:var(--muted);margin-left:4px">${pctPend.toFixed(0)}%</span>
                   </div>
-                </div>
+                </div>` : ''}
+                ${reprovados.length > 0 ? `
+                <div style="display:flex;align-items:center;justify-content:space-between;background:#fff1f0;border-radius:8px;padding:8px 12px">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="width:10px;height:10px;border-radius:3px;background:#c0392b;flex-shrink:0"></div>
+                    <span style="font-size:.82rem;font-weight:500">Reprovados</span>
+                  </div>
+                  <div style="text-align:right">
+                    <span style="font-family:var(--mono);font-weight:800;color:#c0392b;font-size:.9rem">${reprovados.length}</span>
+                    <span style="font-size:.7rem;color:var(--muted);margin-left:4px">${pctReprov.toFixed(0)}%</span>
+                  </div>
+                </div>` : ''}
                 ${outros > 0 ? `
                 <div style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border-radius:8px;padding:8px 12px">
                   <div style="display:flex;align-items:center;gap:8px">
@@ -1476,19 +1487,21 @@ async function renderProjetos() {
   allProjetos = rows;
 
   let countMap = {};
-  if (sb && rows.length) {
+  let totalProdutores = 0;
+  if (sb) {
     try {
       const { data: prods } = await sb.schema('contratos_pro_especiais').from('produtores').select('projeto_id');
-      (prods||[]).forEach(p => { countMap[p.projeto_id] = (countMap[p.projeto_id]||0)+1; });
+      totalProdutores = (prods||[]).length;
+      (prods||[]).forEach(p => { if (p.projeto_id) countMap[p.projeto_id] = (countMap[p.projeto_id]||0)+1; });
     } catch(e) {}
   }
 
   const adminBtn = isGestor() ? `<button class="btn btn-green" onclick="modalNovoProjeto()">➕ Novo Projeto</button>` : '';
   c.innerHTML = `
     ${!isGestor() ? '<div class="readonly-notice">👁️ Modo visualização — somente gestores podem criar projetos.</div>' : ''}
-    <div class="stats">
+    <div class="stats" style="grid-template-columns:repeat(3,1fr)">
       <div class="stat-card"><div class="stat-label">Total de Projetos</div><div class="stat-value blue">${rows.length}</div></div>
-      <div class="stat-card"><div class="stat-label">Total de Produtores</div><div class="stat-value green">${Object.values(countMap).reduce((a,b)=>a+b,0)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total de Produtores</div><div class="stat-value green">${totalProdutores}</div></div>
       <div class="stat-card"><div class="stat-label">Projetos Ativos</div><div class="stat-value green">${rows.filter(r=>r.status==='ativo').length}</div></div>
     </div>
     <div class="toolbar">
@@ -1502,23 +1515,27 @@ async function renderProjetos() {
     <div id="projetos-list">
       ${rows.length === 0
         ? `<div style="text-align:center;padding:48px;color:var(--muted)">📭 Nenhum projeto cadastrado.</div>`
-        : rows.map(r => `
+        : rows.map(r => {
+            const qtdProd = countMap[r.id] || 0;
+            return `
           <div class="projeto-card" id="pc-${r.id}">
             <div class="projeto-card-header">
               <div>
                 <div class="projeto-card-title">📁 ${r.nome}</div>
                 <div class="projeto-card-sub">${r.descricao||'—'} · Criado em ${r.created_at ? fmtData(r.created_at) : '—'}</div>
               </div>
-              <div style="display:flex;gap:5px;align-items:center;">
+              <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+                <span class="badge badge-blue" style="font-size:.72rem">👥 ${qtdProd} produtor${qtdProd===1?'':'es'}</span>
                 <span class="badge ${r.status==='ativo'?'badge-green':'badge-yellow'}">${r.status||'ativo'}</span>
                 ${isGestor() ? `
                   <button class="btn btn-ghost btn-sm" onclick="copiarLink('${r.id}')" title="Copiar Link de Credenciamento">🔗 Link</button>
-                  <button class="btn btn-blue btn-sm" onclick="listarProdutores('${r.id}','${r.nome.replace(/'/g,"\\'")}')" title="Ver Produtores">👥 Produtores</button>
-                  <button class="btn btn-red btn-sm" onclick="deletarProjeto('${r.id}','${r.nome.replace(/'/g,"\\'")}')" title="Excluir">🗑️</button>
-                ` : `<button class="btn btn-ghost btn-sm" onclick="listarProdutores('${r.id}','${r.nome.replace(/'/g,"\\'")}')">👥 Produtores</button>`}
+                  <button class="btn btn-blue btn-sm" onclick="listarProdutores('${r.id}','${r.nome.replace(/'/g,"\'")}')" title="Ver Produtores">👥 Produtores</button>
+                  <button class="btn btn-red btn-sm" onclick="deletarProjeto('${r.id}','${r.nome.replace(/'/g,"\'")}')" title="Excluir">🗑️</button>
+                ` : `<button class="btn btn-ghost btn-sm" onclick="listarProdutores('${r.id}','${r.nome.replace(/'/g,"\'")}')">👥 Produtores</button>`}
               </div>
             </div>
-          </div>`).join('')}
+          </div>`;
+          }).join('')}
     </div>`;
 }
 
@@ -2880,23 +2897,31 @@ async function renderResultadosFIV() {
   }
 
   try {
-    const { data: resultados, error } = await sb
-      .schema('contratos_pro_especiais')
-      .from('resultados_fiv')
-      .select(`
-        *,
-        produtores (
-          id, nome, cpf, municipio, sindicato, quantidade_animais, raca, status,
-          responsavel_preenchimento,
-          projeto_id,
-          projetos ( nome )
-        )
-      `)
-      .order('updated_at', { ascending: false });
+    const [{ data: resultados, error }, { data: faturas }] = await Promise.all([
+      sb.schema('contratos_pro_especiais')
+        .from('resultados_fiv')
+        .select(`*, produtores ( id, nome, cpf, municipio, sindicato, nome_propriedade, quantidade_animais, raca, status, responsavel_preenchimento, projeto_id, projetos ( nome ) )`)
+        .order('updated_at', { ascending: false }),
+      sb.schema('contratos_pro_especiais')
+        .from('faturas')
+        .select('produtor_id, data_pagamento, status')
+        .eq('status', 'pago')
+    ]);
 
     if (error) throw error;
+
+    // Mapa de data_pagamento por produtor_id
+    const faturasPorProd = {};
+    (faturas || []).forEach(f => { faturasPorProd[f.produtor_id] = f.data_pagamento; });
+
+    // Injeta data_pagamento em cada resultado
+    const resultadosComData = (resultados || []).map(r => ({
+      ...r,
+      _data_pagamento: r.produtores?.id ? (faturasPorProd[r.produtores.id] || null) : null
+    }));
+
     // Somente produtores aprovados
-    allResultadosFIV = (resultados || []).filter(r => (r.produtores?.status||'').toLowerCase() === 'aprovado');
+    allResultadosFIV = resultadosComData.filter(r => ['aprovado','enviado'].includes((r.produtores?.status||'').toLowerCase()));
   } catch(e) {
     toast('Erro ao carregar resultados: ' + e.message, 'error');
     allResultadosFIV = [];
@@ -2904,7 +2929,7 @@ async function renderResultadosFIV() {
 
   const total       = allResultadosFIV.length;
   const totAptos    = allResultadosFIV.reduce((s,r) => s + (r.animais_aptos||0), 0);
-  const totImpl     = allResultadosFIV.reduce((s,r) => s + (r.animais_implantados||0), 0);
+  const totImpl     = allResultadosFIV.reduce((s,r) => s + (r.animais_aptos||0), 0);
   const totPrenhez  = allResultadosFIV.reduce((s,r) => s + (r.prenhezes_confirmadas||0), 0);
   const taxaPrenhez = totImpl > 0 ? (totPrenhez/totImpl*100).toFixed(1) : '—';
 
@@ -2979,7 +3004,7 @@ async function renderResultadosFIV() {
       <div class="fiv-kpi accent">
         <div class="fiv-kpi-label">Taxa de Prenhez</div>
         <div class="fiv-kpi-val">${taxaPrenhez !== '—' ? taxaPrenhez + '%' : '—'}</div>
-        <div class="fiv-kpi-sub">${totImpl} implantados</div>
+        <div class="fiv-kpi-sub">${totImpl} animais aptos</div>
       </div>
     </div>
 
@@ -3013,7 +3038,7 @@ async function renderResultadosFIV() {
               <th class="num">Aptos</th>
               <th class="num">Prenhezes</th>
               <th class="num">% Prenhez</th>
-              <th>Data Demanda</th>
+              <th>Data Pagamento</th>
             </tr>
           </thead>
           <tbody id="fiv-tbody">
@@ -3044,12 +3069,13 @@ function renderFIVRows(rows) {
     const txP     = aptos > 0 ? (prenhez/aptos*100).toFixed(1) : null;
     const txClass = txP === null ? '' : parseFloat(txP) >= 60 ? 'taxa-ok' : parseFloat(txP) >= 35 ? 'taxa-med' : 'taxa-bad';
     const resp    = r.tecnico_responsavel || p.responsavel_preenchimento || '—';
-    const dataDemanda = r.data_implantacao || r.created_at;
+    const dataPgto = r._data_pagamento || null;
     return `<tr>
       <td style="font-family:var(--mono);font-size:.76rem;color:#6b8c7a;text-align:center">${i+1}</td>
       <td>
         <div style="font-weight:600;font-size:.85rem">${p.nome||'—'}</div>
         <div style="font-family:var(--mono);font-size:.72rem;color:#8aab97;margin-top:2px">${fmtCPFfiv(p.cpf)}</div>
+        ${p.nome_propriedade ? `<div style="font-size:.7rem;color:#6b8c7a;margin-top:2px">🏡 ${p.nome_propriedade}</div>` : ''}
       </td>
       <td style="font-size:.84rem">${p.municipio||'—'}</td>
       <td>
@@ -3059,7 +3085,7 @@ function renderFIVRows(rows) {
       <td class="num">${aptos||'—'}</td>
       <td class="num">${prenhez||'—'}</td>
       <td style="text-align:center"><span class="taxa-badge ${txClass}">${txP !== null ? txP+'%' : '—'}</span></td>
-      <td style="font-size:.78rem;color:var(--muted);white-space:nowrap">${fmtDate(dataDemanda)}</td>
+      <td style="font-size:.78rem;color:var(--muted);white-space:nowrap">${dataPgto ? fmtDate(dataPgto) : '—'}</td>
     </tr>`;
   }).join('');
 }
@@ -3095,6 +3121,7 @@ function getFIVTableData() {
       '#':                  i+1,
       'Produtor':           p.nome||'—',
       'CPF':                fmtCPFfiv(p.cpf),
+      'Nome da Propriedade': p.nome_propriedade||'—',
       'Município':          p.municipio||'—',
       'Sindicato':          p.sindicato||'—',
       'Animais Aptos':      r.animais_aptos||0,
