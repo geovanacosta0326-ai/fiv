@@ -1075,16 +1075,20 @@ async function renderPainel() {
   }
   try {
     const SCHEMA = 'contratos_pro_especiais';
-    const [projRes, prodRes, fatRes, fivRes] = await Promise.all([
+    const [projRes, prodRes, fatRes] = await Promise.all([
       sb.schema(SCHEMA).from('projetos').select('id,nome,status,created_at').order('created_at',{ascending:false}),
       sb.schema(SCHEMA).from('produtores').select('id,nome,projeto_id,municipio,quantidade_animais,status,created_at'),
       sb.schema(SCHEMA).from('faturas').select('id,valor,valor_pago,status,produtor_id,created_at').order('created_at',{ascending:false}),
-      sb.schema('contratos_pro_especiais').from('resultados_fiv').select('produtor_id,animais_aptos,animais_implantados,prenhezes_confirmadas,nascimentos,created_at'),
     ]);
+    // resultados_fiv carregado separadamente para não bloquear o painel se der erro
+    let fivs = [];
+    try {
+      const fivRes = await sb.schema('contratos_pro_especiais').from('resultados_fiv').select('produtor_id,animais_aptos,animais_implantados,prenhezes_confirmadas,nascimentos,created_at');
+      fivs = fivRes.data || [];
+    } catch(e) { console.warn('resultados_fiv indisponível:', e.message); }
     const projetos  = projRes.data  || [];
     const produtores= prodRes.data  || [];
     const faturas   = fatRes.data   || [];
-    const fivs      = fivRes.data   || [];
 
     const totalFat   = faturas.reduce((s,f)=>s+parseFloat(f.valor||0),0);
     const fatPagas   = faturas.filter(f=>f.status==='pago');
