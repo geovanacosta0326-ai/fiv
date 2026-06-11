@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão de Projetos · FAEC</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-dark:  #0f3d22;
+      --green-mid:   #1a7a45;
+      --green-light: #e8f5ee;
+      --green-pale:  #f2f9f5;
+      --border:      #b8d8c4;
+      --text:        #0f2a1a;
+      --muted:       #4a7a5e;
+      --white:       #ffffff;
+      --font:        'Sora', sans-serif;
+      --mono:        'JetBrains Mono', monospace;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      background: var(--green-pale);
+      color: var(--text);
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(180deg, #0f3d22 0%, #1a5c32 100%);
+      padding: 20px 36px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-logo {
+      height: 52px;
+      width: auto;
+      display: block;
+    }
+
+    .header-content h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .header-content p {
+      font-size: .78rem;
+      color: rgba(255,255,255,.7);
+      margin-top: 4px;
+      font-family: var(--mono);
+      letter-spacing: .05em;
+    }
+
+    /* ── Main ── */
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 56px 24px 80px;
+    }
+
+    .intro {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .intro h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--green-dark);
+      margin-bottom: 10px;
+    }
+
+    .intro p {
+      font-size: .95rem;
+      color: var(--muted);
+      max-width: 460px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── Cards ── */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 560px) {
+      .cards { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 28px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+      transition: box-shadow .2s, transform .2s, border-color .2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+
+    .card:hover {
+      box-shadow: 0 8px 28px rgba(15,61,34,.15);
+      transform: translateY(-3px);
+      border-color: var(--green-mid);
+    }
+
+    .card-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+    }
+
+    .card-icon.public  { background: #e8f5ee; }
+    .card-icon.private { background: #fff3e0; }
+
+    .card-label {
+      font-size: .7rem;
+      font-family: var(--mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+
+    .card-label.public  { background: #d4edda; color: #1a6832; }
+    .card-label.private { background: #ffe8c2; color: #8a5700; }
+
+    .card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--green-dark);
+      line-height: 1.3;
+    }
+
+    .card p {
+      font-size: .85rem;
+      color: var(--muted);
+      line-height: 1.55;
+      flex: 1;
+    }
+
+    .card-cta {
+      margin-top: 8px;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--green-mid);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-cta::after {
+      content: '→';
+      transition: transform .2s;
+    }
+
+    .card:hover .card-cta::after {
+      transform: translateX(4px);
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: .75rem;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="data:image/png;base64,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" alt="FAEC" class="header-logo">
+    <div class="header-content">
+      <h1>Gestão de Projetos · FAEC</h1>
+      <p>FEDERAÇÃO DA AGRICULTURA E PECUÁRIA DO ESTADO DO CEARÁ</p>
+    </div>
+  </header>
+
+  <main>
+    <div class="intro">
+      <h2>Selecione o módulo</h2>
+      <p>Acesse o sistema de credenciamento público ou a área restrita de gestão de projetos.</p>
+    </div>
+
+    <div class="cards">
+
+      <a href="https://geovanacosta0326-ai.github.io/fiv/credenciamento_publico.html?projeto=cad0d0b3-3744-485c-bd61-d4a1cd99f8df" class="card">
+        <div class="card-icon public">📋</div>
+        <span class="card-label public">Acesso público</span>
+        <h3>Credenciamento em Lote</h3>
+        <p>Envio de demandas de credenciamento de produtores rurais via planilha.</p>
+        <span class="card-cta">Acessar</span>
+      </a>
+
+      <a href="gestao_final.html" class="card">
+        <div class="card-icon private">🔒</div>
+        <span class="card-label private">Área restrita</span>
+        <h3>Gestão de Projetos</h3>
+        <p>Painel interno de acompanhamento e gestão. Requer usuário e senha.</p>
+        <span class="card-cta">Entrar</span>
+      </a>
+
+    </div>
+  </main>
+
+  <footer>FAEC · Gestão de Projetos</footer>
+
+</body>
+</html>
