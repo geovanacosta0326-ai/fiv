@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credenciamento em Lote · FAEC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+    /* ── Reset & Base ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:          #f2f7f4;
+      --surface:     #ffffff;
+      --card:        #ffffff;
+      --border:      #b8d8c4;
+      --border2:     #8cbd9e;
+      --accent:      #1a7a45;
+      --accent2:     #145c34;
+      --red:         #c0392b;
+      --yellow:      #d97706;
+      --blue:        #2563eb;
+      --text:        #0f2a1a;
+      --muted:       #4a7a5e;
+      --muted2:      #8ab89a;
+      --font:        'Sora', sans-serif;
+      --mono:        'JetBrains Mono', monospace;
+      --radius:      12px;
+      --shadow:      0 4px 16px rgba(0,0,0,.10);
+      --green-dark:  #0f3d22;
+      --green-mid:   #1a7a45;
+      --green-light: #e8f5ee;
+      --green-pale:  #f2f9f5;
+    }
+    html { font-size: 15px; }
+    body { 
+      font-family: var(--font); 
+      background: var(--bg); 
+      color: var(--text); 
+      min-height: 100vh; 
+      padding: 0;
+    }
+
+    /* ── Header ──────────────────────────────────────── */
+    .page-header {
+      background: linear-gradient(180deg, #0f3d22 0%, #1a5c32 100%);
+      padding: 28px 36px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .header-icon {
+      font-size: 2rem;
+    }
+    .header-content {
+      flex: 1;
+    }
+    .page-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .page-sub {
+      font-size: .78rem;
+      color: rgba(255,255,255,.7);
+      margin-top: 4px;
+      font-family: var(--mono);
+      letter-spacing: .05em;
+    }
+    .header-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.15);
+      padding: 10px 16px;
+      border-radius: 10px;
+      color: #fff;
+      font-size: .82rem;
+    }
+    .header-badge .icon {
+      font-size: 1rem;
+    }
+
+    /* ── Container ───────────────────────────────────── */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }
+
+    /* ── Panel / Card ────────────────────────────────── */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .panel-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--accent2);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      background: var(--green-pale);
+    }
+    .panel-header .icon {
+      font-size: 1rem;
+    }
+    .panel-body {
+      padding: 24px;
+    }
+
+    /* ── Section Title ───────────────────────────────── */
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .76rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      margin: 24px 0 0;
+      background: var(--green-mid);
+      padding: 12px 16px;
+      border-radius: 8px 8px 0 0;
+    }
+    .section-title:first-child {
+      margin-top: 0;
+    }
+    .form-section {
+      background: var(--green-pale);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      padding: 20px;
+      margin-bottom: 8px;
+    }
+
+    /* ── Form ────────────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    .full-width {
+      grid-column: span 2;
+    }
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label {
+      font-size: .72rem;
+      font-weight: 600;
+      color: var(--accent2);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    input[type=text],
+    input[type=number],
+    input[type=email],
+    input[type=date],
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px 14px;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: .88rem;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      appearance: none;
+      -webkit-appearance: none;
+      text-transform: uppercase;
+    }
+    input::placeholder {
+      text-transform: none;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--green-mid);
+      box-shadow: 0 0 0 3px rgba(26,122,69,.15);
+    }
+    input[readonly] {
+      background: var(--green-light) !important;
+      color: var(--muted);
+      cursor: not-allowed;
+    }
+    input::placeholder {
+      color: var(--muted2);
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a7a5e' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 40px;
+    }
+
+    /* ── Buttons ─────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-family: var(--font);
+      font-size: .88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all .2s;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn-green {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(26,122,69,.25);
+    }
+    .btn-green:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(26,122,69,.35);
+    }
+    .btn-yellow {
+      background: linear-gradient(135deg, var(--yellow) 0%, #b45309 100%);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(217,119,6,.25);
+    }
+    .btn-yellow:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(217,119,6,.35);
+    }
+    .btn-yellow:disabled {
+      background: var(--muted2);
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+    .btn-blue {
+      background: linear-gradient(135deg, var(--blue) 0%, #1d4ed8 100%);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(37,99,235,.25);
+    }
+    .btn-blue:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(37,99,235,.35);
+    }
+    .btn-blue:disabled {
+      background: var(--muted2);
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+    .btn-red {
+      background: var(--red);
+      color: #fff;
+    }
+    .btn-red:hover {
+      background: #a93226;
+    }
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: .78rem;
+      border-radius: 8px;
+    }
+    .btn-full {
+      width: 100%;
+    }
+    .btn-acao {
+      width: 100%;
+    }
+
+    /* ── Table ───────────────────────────────────────── */
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .84rem;
+    }
+    thead tr {
+      background: var(--green-dark);
+    }
+    th {
+      padding: 14px 16px;
+      text-align: left;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #fff;
+      border-bottom: none;
+      white-space: nowrap;
+    }
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: middle;
+    }
+    tbody tr {
+      transition: background .15s;
+    }
+    tbody tr:hover {
+      background: rgba(26,122,69,.06);
+    }
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .empty-row td {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    /* ── Stats Bar ───────────────────────────────────── */
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-item {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .stat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+    .stat-icon.green {
+      background: var(--green-light);
+    }
+    .stat-icon.blue {
+      background: rgba(37,99,235,.1);
+    }
+    .stat-content {
+      flex: 1;
+    }
+    .stat-label {
+      font-size: .7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      font-family: var(--mono);
+      color: var(--text);
+    }
+
+    /* ── Actions Footer ──────────────────────────────── */
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Toast ───────────────────────────────────────── */
+    #toast-wrap {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-size: .85rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toast-in .3s ease;
+      box-shadow: var(--shadow);
+      min-width: 280px;
+    }
+    .toast.success {
+      background: rgba(26,122,69,.12);
+      border: 1px solid rgba(26,122,69,.3);
+      color: var(--accent);
+    }
+    .toast.error {
+      background: rgba(192,57,43,.15);
+      border: 1px solid rgba(192,57,43,.3);
+      color: var(--red);
+    }
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(20px); }
+    }
+
+    /* ── Badge ───────────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+    }
+    .badge-green {
+      background: rgba(26,122,69,.12);
+      color: var(--accent);
+      border: 1px solid rgba(26,122,69,.2);
+    }
+    .badge-blue {
+      background: rgba(37,99,235,.1);
+      color: var(--blue);
+      border: 1px solid rgba(37,99,235,.2);
+    }
+
+    /* ── Scrollbar ───────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    /* ── Responsive ──────────────────────────────────── */
+    @media (max-width: 768px) {
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px;
+      }
+      .header-badge {
+        width: 100%;
+        justify-content: center;
+      }
+      .container {
+        padding: 20px 16px;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .full-width {
+        grid-column: span 1;
+      }
+      .stats-bar {
+        flex-direction: column;
+      }
+      .form-actions {
+        flex-direction: column;
+      }
+      .btn {
+        width: 100%;
+      }
+    }
+    </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────── -->
+<header class="page-header">
+    <span class="header-icon">🌾</span>
+    <div class="header-content">
+        <h1 class="page-title">Credenciamento em Lote</h1>
+        <p class="page-sub">FAEC · Sistema de Gestão Rural</p>
+    </div>
+    <div class="header-badge">
+        <span class="icon">📅</span>
+        <input type="text" id="data_preenchimento" readonly style="background:transparent;border:none;color:#fff;font-family:var(--mono);font-size:.85rem;width:90px;padding:0;">
+    </div>
+</header>
+
+<!-- ── Main Content ────────────────────────────────── -->
+<main class="container">
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat-item">
+            <div class="stat-icon green">📋</div>
+            <div class="stat-content">
+                <div class="stat-label">Produtores na Lista</div>
+                <div class="stat-value" id="countProdutores">0</div>
+            </div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-icon blue">🐄</div>
+            <div class="stat-content">
+                <div class="stat-label">Total de Animais</div>
+                <div class="stat-value" id="countAnimais">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Identifica����ão Panel -->
+    <div class="panel">
+        <div class="panel-header">
+            <span class="icon">📝</span>
+            Identificação
+        </div>
+        <div class="panel-body">
+            <div class="form-grid">
+                <div class="field-group full-width">
+                    <label>Sindicato Rural <span style="color:#e53e3e">*</span></label>
+                    <select id="sindicato_select">
+                        <option value="">SELECIONE O SINDICATO</option>
+                        <option value="SINDICATO RURAL DE ACOPIARA">SINDICATO RURAL DE ACOPIARA</option>
+                        <option value="SINDICATO RURAL DE AMONTADA">SINDICATO RURAL DE AMONTADA</option>
+                        <option value="SINDICATO RURAL DE ARACATI">SINDICATO RURAL DE ARACATI</option>
+                        <option value="SINDICATO RURAL DE ARACOIABA">SINDICATO RURAL DE ARACOIABA</option>
+                        <option value="SINDICATO RURAL DE ARARIPE">SINDICATO RURAL DE ARARIPE</option>
+                        <option value="SINDICATO RURAL DE AURORA">SINDICATO RURAL DE AURORA</option>
+                        <option value="SINDICATO RURAL DE BANABUIÚ">SINDICATO RURAL DE BANABUIÚ</option>
+                        <option value="SINDICATO RURAL DE BARREIRA">SINDICATO RURAL DE BARREIRA</option>
+                        <option value="SINDICATO RURAL DE BEBERIBE">SINDICATO RURAL DE BEBERIBE</option>
+                        <option value="SINDICATO RURAL DE BREJO SANTO">SINDICATO RURAL DE BREJO SANTO</option>
+                        <option value="SINDICATO RURAL DE CANINDÉ">SINDICATO RURAL DE CANINDÉ</option>
+                        <option value="SINDICATO RURAL DE CASCAVEL">SINDICATO RURAL DE CASCAVEL</option>
+                        <option value="SINDICATO RURAL DE CATUNDA">SINDICATO RURAL DE CATUNDA</option>
+                        <option value="SINDICATO RURAL DE CAUCAIA">SINDICATO RURAL DE CAUCAIA</option>
+                        <option value="SINDICATO RURAL DE CEDRO">SINDICATO RURAL DE CEDRO</option>
+                        <option value="SINDICATO RURAL DE COREAÚ">SINDICATO RURAL DE COREAÚ</option>
+                        <option value="SINDICATO RURAL DE CRATEÚS">SINDICATO RURAL DE CRATEÚS</option>
+                        <option value="SINDICATO RURAL DE CRATO">SINDICATO RURAL DE CRATO</option>
+                        <option value="SINDICATO RURAL DE GRANJA">SINDICATO RURAL DE GRANJA</option>
+                        <option value="SINDICATO RURAL DE GUARACIABA DO NORTE">SINDICATO RURAL DE GUARACIABA DO NORTE</option>
+                        <option value="SINDICATO RURAL DE HORIZONTE">SINDICATO RURAL DE HORIZONTE</option>
+                        <option value="SINDICATO RURAL DE IBARETAMA">SINDICATO RURAL DE IBARETAMA</option>
+                        <option value="SINDICATO RURAL DE IBIAPINA">SINDICATO RURAL DE IBIAPINA</option>
+                        <option value="SINDICATO RURAL DE IGUATU">SINDICATO RURAL DE IGUATU</option>
+                        <option value="SINDICATO RURAL DE INDEPENDÊNCIA">SINDICATO RURAL DE INDEPENDÊNCIA</option>
+                        <option value="SINDICATO RURAL DE IRACEMA">SINDICATO RURAL DE IRACEMA</option>
+                        <option value="SINDICATO RURAL DE ITAPAJÉ">SINDICATO RURAL DE ITAPAJÉ</option>
+                        <option value="SINDICATO RURAL DE ITAPIPOCA">SINDICATO RURAL DE ITAPIPOCA</option>
+                        <option value="SINDICATO RURAL DE JAGUARETAMA">SINDICATO RURAL DE JAGUARETAMA</option>
+                        <option value="SINDICATO RURAL DE JAGUARIBE">SINDICATO RURAL DE JAGUARIBE</option>
+                        <option value="SINDICATO RURAL DE LAVRAS DA MANGABEIRA">SINDICATO RURAL DE LAVRAS DA MANGABEIRA</option>
+                        <option value="SINDICATO RURAL DE LIMOEIRO DO NORTE">SINDICATO RURAL DE LIMOEIRO DO NORTE</option>
+                        <option value="SINDICATO RURAL DE MADALENA">SINDICATO RURAL DE MADALENA</option>
+                        <option value="SINDICATO RURAL DE MARANGUAPE">SINDICATO RURAL DE MARANGUAPE</option>
+                        <option value="SINDICATO RURAL DE MARCO">SINDICATO RURAL DE MARCO</option>
+                        <option value="SINDICATO RURAL DE MASSAPÊ">SINDICATO RURAL DE MASSAPÊ</option>
+                        <option value="SINDICATO RURAL DE MAURITI">SINDICATO RURAL DE MAURITI</option>
+                        <option value="SINDICATO RURAL DE MILAGRES">SINDICATO RURAL DE MILAGRES</option>
+                        <option value="SINDICATO RURAL DE MISSÃO VELHA">SINDICATO RURAL DE MISSÃO VELHA</option>
+                        <option value="SINDICATO RURAL DE MOMBAÇA">SINDICATO RURAL DE MOMBAÇA</option>
+                        <option value="SINDICATO RURAL DE MONSENHOR TABOSA">SINDICATO RURAL DE MONSENHOR TABOSA</option>
+                        <option value="SINDICATO RURAL DE MORADA NOVA">SINDICATO RURAL DE MORADA NOVA</option>
+                        <option value="SINDICATO RURAL DE MORAÚJO">SINDICATO RURAL DE MORAÚJO</option>
+                        <option value="SINDICATO RURAL DE MORRINHOS">SINDICATO RURAL DE MORRINHOS</option>
+                        <option value="SINDICATO RURAL DE NOVA OLINDA">SINDICATO RURAL DE NOVA OLINDA</option>
+                        <option value="SINDICATO RURAL DE NOVA RUSSAS">SINDICATO RURAL DE NOVA RUSSAS</option>
+                        <option value="SINDICATO RURAL DE PIQUET CARNEIRO">SINDICATO RURAL DE PIQUET CARNEIRO</option>
+                        <option value="SINDICATO RURAL DE QUIXADÁ">SINDICATO RURAL DE QUIXADÁ</option>
+                        <option value="SINDICATO RURAL DE QUIXERAMOBIM">SINDICATO RURAL DE QUIXERAMOBIM</option>
+                        <option value="SINDICATO RURAL DE RUSSAS">SINDICATO RURAL DE RUSSAS</option>
+                        <option value="SINDICATO RURAL DE SANTA QUITÉRIA">SINDICATO RURAL DE SANTA QUITÉRIA</option>
+                        <option value="SINDICATO RURAL DE SANTANA DO ACARAÚ">SINDICATO RURAL DE SANTANA DO ACARAÚ</option>
+                        <option value="SINDICATO RURAL DE SENADOR POMPEU">SINDICATO RURAL DE SENADOR POMPEU</option>
+                        <option value="SINDICATO RURAL DE SOBRAL">SINDICATO RURAL DE SOBRAL</option>
+                        <option value="SINDICATO RURAL DE SOLONÓPOLE">SINDICATO RURAL DE SOLONÓPOLE</option>
+                        <option value="SINDICATO RURAL DE TAMBORIL">SINDICATO RURAL DE TAMBORIL</option>
+                        <option value="SINDICATO RURAL DE TAUÁ">SINDICATO RURAL DE TAUÁ</option>
+                        <option value="SINDICATO RURAL DE TRAIRI">SINDICATO RURAL DE TRAIRI</option>
+                        <option value="SINDICATO RURAL DE UBAJARA">SINDICATO RURAL DE UBAJARA</option>
+                        <option value="SINDICATO RURAL DE VIÇOSA DO CEARÁ">SINDICATO RURAL DE VIÇOSA DO CEARÁ</option>
+                    </select>
+                </div>
+                <div class="field-group full-width">
+                    <label>Responsável pelo Preenchimento das Informações <span style="color:#e53e3e">*</span></label>
+                    <input type="text" id="resp_nome" placeholder="Digite o nome completo do responsável">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dados do Produtor Panel -->
+    <div class="panel">
+        <div class="panel-header">
+            <span class="icon">👤</span>
+            Dados do Produtor
+        </div>
+        <div class="panel-body">
+            <div class="form-grid">
+                <div class="field-group full-width">
+                    <label>Nome do Produtor <span style="color:#e53e3e">*</span></label>
+                    <input type="text" id="nome" placeholder="Nome completo do produtor">
+                </div>
+                <div class="field-group">
+                    <label>CPF <span style="color:#e53e3e">*</span></label>
+                    <input type="text" id="cpf" placeholder="000.000.000-00">
+                </div>
+                <div class="field-group">
+                    <label>Município <span style="color:#e53e3e">*</span></label>
+                    <input type="text" id="municipio" placeholder="Nome do município">
+                </div>
+                <div class="field-group full-width">
+                    <label>Nome da Propriedade <span style="color:#e53e3e">*</span></label>
+                    <input type="text" id="nome_propriedade" placeholder="Nome da propriedade rural">
+                </div>
+                <div class="field-group">
+                    <label>Contato <span style="color:#e53e3e">*</span></label>
+                    <input type="text" id="contato" placeholder="(xx) 9xxxx-xxxx" maxlength="15">
+                </div>
+                <div class="field-group">
+                    <label>Qtd. Animais Aptos (13 a 35) <span style="color:#e53e3e">*</span></label>
+                    <input type="number" id="animais" placeholder="13 a 35" min="13" max="35">
+                </div>
+                <div class="field-group">
+                    <label>Área Sombreada <span style="color:#e53e3e">*</span></label>
+                    <select id="area_sombreada">
+                        <option value="SIM">✓ Sim</option>
+                        <option value="NÃO">✗ Não</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>Vacina Reprodutiva <span style="color:#e53e3e">*</span></label>
+                    <select id="vacinacao">
+                        <option value="SIM">✓ Sim</option>
+                        <option value="NÃO">✗ Não</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button class="btn btn-green btn-full btn-acao btn-add" onclick="adicionarNaLista()">
+                    <span>➕</span> Adicionar Produtor à Lista
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Produtores -->
+    <div class="panel">
+        <div class="panel-header">
+            <span class="icon">📋</span>
+            Lista de Produtores para Envio
+        </div>
+        <div class="table-wrap">
+            <table id="tabela">
+                <thead>
+                    <tr>
+                        <th>Produtor</th>
+                        <th>CPF</th>
+                        <th>Município</th>
+                        <th>Animais</th>
+                        <th style="width:100px;text-align:center;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="listaCorpo">
+                    <tr class="empty-row">
+                        <td colspan="5">
+                            <span style="font-size:2rem;display:block;margin-bottom:8px;">📭</span>
+                            Nenhum produtor adicionado ainda
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="form-actions" style="border-top: none; margin-top: 0; padding-top: 0; margin-bottom: 24px;">
+        <button class="btn btn-yellow btn-full btn-acao" id="btnBaixar" onclick="baixarPlanilha()" disabled>
+            <span>📥</span> Baixar Planilha (Excel)
+        </button>
+    </div>
+
+    <!-- Submit Button -->
+    <button class="btn btn-blue btn-full btn-acao btn-save" id="btnSalvar" onclick="enviarTudo()" disabled>
+        <span>🚀</span> Confirmar e Enviar Todos os Produtores
+    </button>
+
+</main>
+
+<!-- Toast Container -->
+<div id="toast-wrap"></div>
+
+<script>
+    // --- CONFIGURAÇÃO SUPABASE ---
+    const SUPABASE_URL = 'https://ptmnltxdqoesudiuqhxw.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0bW5sdHhkcW9lc3VkaXVxaHh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5OTEyMDQsImV4cCI6MjA5NDU2NzIwNH0.P4B6FrBwcgO904mDCOVIe0pxUjpzeXm1-77jMM0cDUQ'; 
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // --- MÁSCARA DE CPF ---
+    function mascaraCPF(campo) {
+        let valor = campo.value.replace(/\D/g, '');
+        valor = valor.substring(0, 11);
+        valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+        valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+        valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        campo.value = valor;
+    }
+
+    document.getElementById('cpf').addEventListener('input', function() {
+        mascaraCPF(this);
+    });
+
+    // --- MÁSCARA DE CONTATO (xx) 9xxxx-xxxx ---
+    function mascaraTelefone(campo) {
+        let v = campo.value.replace(/\D/g, '').substring(0, 11);
+        if (v.length >= 7) v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+        else if (v.length >= 3) v = v.replace(/(\d{2})(\d{0,4})/, '($1) $2');
+        else if (v.length >= 1) v = v.replace(/(\d{0,2})/, '($1');
+        campo.value = v;
+    }
+
+    document.getElementById('contato').addEventListener('input', function() {
+        mascaraTelefone(this);
+    });
+
+    // --- LÓGICA DO PROJETO ---
+    let params = new URLSearchParams(window.location.search);
+    let projetoId = params.get('projeto');
+    // Força DD/MM/AAAA independente da localidade do sistema operacional
+    const _hoje = new Date();
+    const _dd   = String(_hoje.getDate()).padStart(2,'0');
+    const _mm   = String(_hoje.getMonth()+1).padStart(2,'0');
+    const _aaaa = _hoje.getFullYear();
+    document.getElementById('data_preenchimento').value = `${_dd}/${_mm}/${_aaaa}`;
+    let listaTemporaria = [];
+
+    function adicionarNaLista() {
+    // 1. Captura dos valores
+    const resp = document.getElementById('resp_nome').value.trim();
+    const nome = document.getElementById('nome').value.trim();
+    const cpfInput = document.getElementById('cpf').value.trim(); // Captura com máscara
+    const mun = document.getElementById('municipio').value.trim();
+    const nomeProp = document.getElementById('nome_propriedade').value.trim();
+    const contato = document.getElementById('contato').value.trim();
+    const animais = document.getElementById('animais').value;
+
+    // 2. CRÍTICA: Verifica se os campos obrigatórios estão vazios
+    if (!resp) { alert("ERRO: O nome do responsável é obrigatório."); return; }
+    if (!nome) { alert("ERRO: O nome do produtor é obrigatório."); return; }
+    if (cpfInput.length < 14) { alert("ERRO: O CPF está incompleto ou inválido."); return; }
+    if (!nomeProp) { alert("ERRO: O nome da propriedade é obrigatório."); return; }
+    if (!contato) { alert("ERRO: O contato é obrigatório."); return; }
+    if (!mun) { alert("ERRO: O município é obrigatório."); return; }
+    const sindicatoVal = document.getElementById('sindicato_select').value;
+    if (!sindicatoVal) { alert("ERRO: O Sindicato Rural é obrigatório."); return; }
+
+    // 3. Validação de quantidade
+    const qtdAnimais = parseInt(animais);
+    if(isNaN(qtdAnimais) || qtdAnimais < 13 || qtdAnimais > 35) {
+        alert("A QUANTIDADE DE ANIMAIS DEVE SER ENTRE 13 E 35");
+        return;
+    }
+
+    // 4. Validação do total do lote
+    const totalAtual = listaTemporaria.reduce((acc, p) => acc + (p.quantidade_animais || 0), 0);
+    if(totalAtual + qtdAnimais > 800) {
+        alert("O TOTAL DE ANIMAIS DO GRUPO NÃO PODE EXCEDER 800.");
+        return;
+    }
+
+    // A MÁGICA: Remove pontos e traços para salvar apenas os 11 dígitos
+    const cpfLimpo = cpfInput.replace(/\D/g, '');
+
+    // 5. Se passou por todas as críticas, monta o objeto
+    const produtor = {
+        projeto_id: projetoId,
+        responsavel_preenchimento: resp.toUpperCase(),
+        sindicato: document.getElementById('sindicato_select').value,
+        nome: nome.toUpperCase(),
+        cpf: cpfLimpo, // Enviando apenas os 11 números, o banco não reclamará mais!
+        nome_propriedade: nomeProp.toUpperCase(),
+        contato: contato,
+        municipio: mun.toUpperCase(),
+        quantidade_animais: qtdAnimais,
+        area_sombreada: document.getElementById('area_sombreada').value === 'SIM',
+        vacinacao_em_dia: document.getElementById('vacinacao').value === 'SIM',
+        data_cadastro: document.getElementById('data_preenchimento').value
+    };
+
+    listaTemporaria.push(produtor);
+    atualizarTabela();
+    atualizarStats();
+    
+        const novoTotal = listaTemporaria.reduce((acc, p) => acc + (p.quantidade_animais || 0), 0);
+        const podeEnviar = novoTotal >= 80;
+        document.getElementById('btnSalvar').disabled = !podeEnviar;
+        document.getElementById('btnBaixar').disabled = !podeEnviar;
+    
+    // Salva município para pré-preencher próximo
+    if (!window._municipioPadrao) {
+        window._municipioPadrao = mun.toUpperCase();
+    }
+
+    // Limpeza dos campos após sucesso
+    document.getElementById('nome').value = '';
+    document.getElementById('cpf').value = '';
+    document.getElementById('municipio').value = window._municipioPadrao || '';
+    document.getElementById('nome_propriedade').value = '';
+    document.getElementById('contato').value = '';
+    document.getElementById('animais').value = '';
+    
+    alert("Produtor adicionado com sucesso!");
+}
+
+
+    function atualizarTabela() {
+        const corpo = document.getElementById('listaCorpo');
+        if(listaTemporaria.length === 0) {
+            corpo.innerHTML = `<tr class="empty-row"><td colspan="5"><span style="font-size:2rem;display:block;margin-bottom:8px;">📭</span>Nenhum produtor adicionado ainda</td></tr>`;
+            return;
+        }
+        corpo.innerHTML = '';
+        listaTemporaria.forEach((p, index) => {
+            corpo.innerHTML += `<tr>
+                <td><strong>${p.nome}</strong></td>
+                <td><span style="font-family:var(--mono);color:var(--muted);">${p.cpf}</span></td>
+                <td>${p.municipio || '—'}</td>
+                <td><span class="badge badge-blue">${p.quantidade_animais || 0}</span></td>
+                <td style="text-align:center;display:flex;gap:6px;justify-content:center;">
+                    <button class="btn btn-sm" style="background:#e8f5ee;color:#1a7a45;border:1px solid #b8d8c4" onclick="editarProdutor(${index})">✏️ Editar</button>
+                    <button class="btn btn-red btn-sm btn-del" onclick="remover(${index})">Excluir</button>
+                </td>
+            </tr>`;
+        });
+    }
+
+    function atualizarStats() {
+        document.getElementById('countProdutores').textContent = listaTemporaria.length;
+        const totalAnimais = listaTemporaria.reduce((acc, p) => acc + (p.quantidade_animais || 0), 0);
+        document.getElementById('countAnimais').textContent = totalAnimais;
+    }
+
+    function remover(index) {
+        listaTemporaria.splice(index, 1);
+        atualizarTabela();
+        atualizarStats();
+        const totalAnimais = listaTemporaria.reduce((acc, p) => acc + (p.quantidade_animais || 0), 0);
+        const podeEnviar = listaTemporaria.length > 0 && totalAnimais >= 80;
+        document.getElementById('btnSalvar').disabled = !podeEnviar;
+        document.getElementById('btnBaixar').disabled = !podeEnviar;
+    }
+
+    function editarProdutor(index) {
+        const p = listaTemporaria[index];
+        document.getElementById('resp_nome').value = p.responsavel_preenchimento || '';
+        document.getElementById('nome').value = p.nome || '';
+        document.getElementById('cpf').value = p.cpf || '';
+        document.getElementById('municipio').value = p.municipio || '';
+        document.getElementById('nome_propriedade').value = p.nome_propriedade || '';
+        document.getElementById('contato').value = p.contato || '';
+        document.getElementById('animais').value = p.quantidade_animais || '';
+        document.getElementById('area_sombreada').value = p.area_sombreada ? 'SIM' : 'NAO';
+        document.getElementById('vacinacao').value = p.vacinacao_em_dia ? 'SIM' : 'NAO';
+        listaTemporaria.splice(index, 1);
+        atualizarTabela();
+        atualizarStats();
+        const totalAnimais = listaTemporaria.reduce((acc, p) => acc + (p.quantidade_animais || 0), 0);
+        const podeEnviar = listaTemporaria.length > 0 && totalAnimais >= 80;
+        document.getElementById('btnSalvar').disabled = !podeEnviar;
+        document.getElementById('btnBaixar').disabled = !podeEnviar;
+        document.getElementById('nome').focus();
+        window.scrollTo({top: document.getElementById('nome').getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth'});
+    }
+
+    // --- CONFIGURAÇÃO EMAIL ---
+    const EMAIL_DESTINO = 'josias@faec.org.br';
+
+    // Gera o XLSX em base64 para download
+    function gerarXLSXBase64() {
+        const dadosExcel = listaTemporaria.map((p, index) => {
+            // data_cadastro já está em DD/MM/AAAA, passa direto
+            return {
+                'N°': index + 1,
+                'Nome do Produtor': p.nome,
+                'CPF': p.cpf,
+                'Municipio': p.municipio,
+                'Nome da Propriedade': p.nome_propriedade,
+                'Contato': p.contato,
+                'Qtd. Animais': p.quantidade_animais,
+                'Area Sombreada': p.area_sombreada ? 'SIM' : 'NAO',
+                'Vacina Reprodutiva': p.vacinacao_em_dia ? 'SIM' : 'NAO',
+                'Sindicato': p.sindicato,
+                'Responsavel': p.responsavel_preenchimento,
+                'Data Cadastro': p.data_cadastro
+            };
+        });
+        const ws = XLSX.utils.json_to_sheet(dadosExcel);
+        ws['!cols'] = [
+            {wch:5},{wch:35},{wch:14},{wch:20},{wch:30},{wch:16},
+            {wch:12},{wch:15},{wch:15},{wch:25},{wch:30},{wch:12}
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Produtores');
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function baixarEEnviarEmail() {
+        const sindicato   = listaTemporaria[0]?.sindicato || '—';
+        const responsavel = listaTemporaria[0]?.responsavel_preenchimento || '—';
+        const totalProd   = listaTemporaria.length;
+        const totalAnim   = listaTemporaria.reduce((acc, p) => acc + (p.quantidade_animais || 0), 0);
+
+        const _h = new Date();
+        const dataHoje = `${String(_h.getDate()).padStart(2,'0')}/${String(_h.getMonth()+1).padStart(2,'0')}/${_h.getFullYear()}`;
+        const nomeArquivo = `DEMANDA_FIV_${sindicato.replace(/\s+/g,'_')}_${dataHoje.replace(/\//g,'-')}.xlsx`;
+
+        // 1. Baixa a planilha automaticamente
+        const base64 = gerarXLSXBase64();
+        const byteChars = atob(base64);
+        const byteArr = new Uint8Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+        const blob = new Blob([byteArr], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url; a.download = nomeArquivo; a.click();
+        URL.revokeObjectURL(url);
+
+        // 2. Monta corpo em texto simples (Gmail URL não suporta HTML no body)
+        const linhasProd = listaTemporaria.map((p, i) =>
+            `  ${String(i+1).padStart(2,'0')}. ${p.nome} | CPF: ${p.cpf} | ${p.municipio} | Animais: ${p.quantidade_animais}`
+        ).join('\n');
+
+        const corpoTexto =
+`Prezada Geovana,
+
+Encaminho a demanda de credenciamento FIV conforme detalhamento abaixo.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RESUMO DA DEMANDA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Sindicato : ${sindicato}
+Responsável: ${responsavel}
+Produtores : ${totalProd}
+Animais    : ${totalAnim}
+Data       : ${dataHoje}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RELAÇÃO DE PRODUTORES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${linhasProd}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠ ANEXO OBRIGATÓRIO: O arquivo "${nomeArquivo}" foi baixado automaticamente na sua pasta Downloads. Anexe-o antes de enviar.
+
+Atenciosamente,
+Sistema de Credenciamento FAEC
+(Mensagem gerada automaticamente)`;
+
+        const assunto = encodeURIComponent(`[FAEC] Demanda FIV - ${sindicato} - ${dataHoje}`);
+        const corpoEnc = encodeURIComponent(corpoTexto);
+
+        setTimeout(() => {
+            window.open(`https://mail.google.com/mail/?view=cm&to=${EMAIL_DESTINO}&su=${assunto}&body=${corpoEnc}&tf=1`, '_blank');
+        }, 800);
+    }
+
+    async function enviarTudo() {
+        if (!projetoId) { alert("ERRO: PROJETO NÃO IDENTIFICADO NA URL"); return; }
+
+        const btn = document.getElementById('btnSalvar');
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳</span> SALVANDO NO BANCO...';
+
+        // 1. Salva no Supabase
+        const { error } = await supabaseClient.schema('contratos_pro_especiais').from('produtores').insert(listaTemporaria);
+        if (error) {
+            alert('ERRO AO SALVAR: ' + error.message);
+            btn.disabled = false;
+            btn.innerHTML = '<span>🚀</span> Confirmar e Enviar Todos os Produtores';
+            return;
+        }
+
+        // 2. Baixa planilha + abre cliente de e-mail
+        btn.innerHTML = '<span>📧</span> PREPARANDO E-MAIL...';
+        baixarEEnviarEmail();
+        mostrarSucesso();
+    }
+
+    function mostrarSucesso() {
+        const sindicato   = listaTemporaria[0]?.sindicato || '—';
+        const responsavel = listaTemporaria[0]?.responsavel_preenchimento || '—';
+        const totalProd   = listaTemporaria.length;
+        const totalAnim   = listaTemporaria.reduce((acc, p) => acc + (p.quantidade_animais || 0), 0);
+
+        document.getElementById('btnSalvar').style.display = 'none';
+        document.getElementById('btnBaixar').style.display = 'none';
+
+        document.querySelector('main.container').insertAdjacentHTML('afterbegin', `
+        <div style="
+            background:linear-gradient(135deg,#0f3d22 0%,#1a5c32 100%);
+            border-radius:16px;padding:32px;text-align:center;margin-bottom:28px;
+            box-shadow:0 8px 32px rgba(15,61,34,.25);color:#fff;
+        ">
+            <div style="font-size:3rem;margin-bottom:12px">✅</div>
+            <div style="font-size:1.3rem;font-weight:800;margin-bottom:8px">Dados salvos com sucesso!</div>
+            <div style="
+                background:rgba(255,255,255,.12);border-radius:10px;
+                padding:14px 20px;margin:0 auto 20px;max-width:480px;
+                font-size:.85rem;line-height:1.8;text-align:left;
+            ">
+                <div>📥 <strong>Planilha baixada</strong> — verifique sua pasta Downloads</div>
+                <div>📧 <strong>Cliente de e-mail aberto</strong> com assunto e corpo preenchidos</div>
+                <div style="opacity:.75;font-size:.78rem;margin-top:6px">⚠️ Anexe o arquivo <code style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px">.xlsx</code> antes de enviar para <strong>${EMAIL_DESTINO}</strong></div>
+            </div>
+            <div style="display:inline-flex;flex-wrap:wrap;justify-content:center;gap:20px;background:rgba(255,255,255,.1);border-radius:10px;padding:14px 24px;font-size:.82rem;font-family:var(--mono);margin-bottom:20px">
+                <div><div style="opacity:.6;margin-bottom:2px;font-size:.7rem">SINDICATO</div><div style="font-weight:700">${sindicato}</div></div>
+                <div><div style="opacity:.6;margin-bottom:2px;font-size:.7rem">RESPONSÁVEL</div><div style="font-weight:700">${responsavel}</div></div>
+                <div><div style="opacity:.6;margin-bottom:2px;font-size:.7rem">PRODUTORES</div><div style="font-weight:700">${totalProd}</div></div>
+                <div><div style="opacity:.6;margin-bottom:2px;font-size:.7rem">ANIMAIS</div><div style="font-weight:700">${totalAnim}</div></div>
+            </div>
+            <div>
+                <button onclick="location.reload()" style="
+                    padding:10px 28px;border-radius:8px;border:1.5px solid rgba(255,255,255,.4);
+                    background:transparent;color:#fff;font-family:var(--font);font-size:.88rem;
+                    font-weight:600;cursor:pointer;
+                ">🔄 Novo Preenchimento</button>
+            </div>
+        </div>`);
+    }
+
+    function baixarPlanilha() {
+        if(listaTemporaria.length === 0) {
+            alert("Nenhum produtor na lista para exportar.");
+            return;
+        }
+
+        // Preparar dados para a planilha
+        const dadosExcel = listaTemporaria.map((p, index) => {
+            // Formatar data para DD/MM/AAAA
+            let dataFormatada = p.data_cadastro;
+            if(p.data_cadastro && p.data_cadastro.includes('-')) {
+                const [ano, mes, dia] = p.data_cadastro.split('-');
+                dataFormatada = `${dia}/${mes}/${ano}`;
+            }
+            
+            return {
+                'N°': index + 1,
+                'Nome do Produtor': p.nome,
+                'CPF': p.cpf,
+                'Municipio': p.municipio,
+                'Nome da Propriedade': p.nome_propriedade,
+                'Contato': p.contato,
+                'Qtd. Animais': p.quantidade_animais,
+                'Area Sombreada': p.area_sombreada ? 'SIM' : 'NAO',
+                'Vacina Reprodutiva': p.vacinacao_em_dia ? 'SIM' : 'NAO',
+                'Sindicato': p.sindicato,
+                'Responsavel': p.responsavel_preenchimento,
+                'Data Cadastro': dataFormatada
+            };
+        });
+
+        // Criar workbook e worksheet
+        const ws = XLSX.utils.json_to_sheet(dadosExcel);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Produtores");
+
+        // Ajustar largura das colunas
+        ws['!cols'] = [
+            { wch: 5 },   // N°
+            { wch: 35 },  // Nome
+            { wch: 14 },  // CPF
+            { wch: 20 },  // Município
+            { wch: 30 },  // Nome Propriedade
+            { wch: 16 },  // Contato
+            { wch: 12 },  // Qtd. Animais
+            { wch: 15 },  // Área Sombreada
+            { wch: 15 },  // Vacinação
+            { wch: 25 },  // Sindicato
+            { wch: 30 },  // Responsável
+            { wch: 12 }   // Data
+        ];
+
+        // Gerar nome do arquivo com data
+        const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+        const nomeArquivo = `produtores_lote_${dataAtual}.xlsx`;
+
+        // Baixar arquivo
+        XLSX.writeFile(wb, nomeArquivo);
+    }
+</script>
+</body>
+</html>
